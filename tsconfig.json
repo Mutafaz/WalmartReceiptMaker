@@ -1,6 +1,4 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "target": "ES2018",
     "module": "ESNext",
@@ -16,9 +14,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
+      "@/*": ["client/src/*"]
     }
   },
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["client/src/**/*", "server/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
