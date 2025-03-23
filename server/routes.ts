@@ -105,15 +105,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "PDF generation handled client-side" });
   });
 
-  // Function to fetch product information from Walmart URL
-  async function fetchWalmartProductInfo(url: string): Promise<{name: string, price: string}> {
+  // Function to fetch product information from AisleGopher URL
+  async function fetchAisleGopherProductInfo(url: string): Promise<{name: string, price: string}> {
     try {
-      console.log(`Attempting to fetch Walmart product from URL: ${url}`);
+      console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
       
-      // Extract the product ID from the URL
-      const productIdMatch = url.match(/\/ip\/[\w-]+\/(\d+)/);
+      // Extract the product ID from the URL - AisleGopher URLs are in format:
+      // https://aislegopher.com/p/product-name/productId
+      const productIdMatch = url.match(/\/p\/.*?\/(\d+)/);
       if (!productIdMatch) {
-        console.error('Could not extract product ID from URL');
+        console.error('Could not extract product ID from AisleGopher URL');
         return {
           name: 'Error Extracting Product ID',
           price: '0.00'
@@ -123,73 +124,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productId = productIdMatch[1];
       console.log(`Extracted product ID: ${productId}`);
       
-      // Use a more reliable approach by trying to access Walmart's API directly
-      // Format: https://www.walmart.com/terra-firma/item/{productId}
-      const apiUrl = `https://www.walmart.com/terra-firma/item/${productId}`;
-      
-      console.log(`Fetching from API URL: ${apiUrl}`);
-      const response = await fetch(apiUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        // If API approach fails, fall back to directly parsing URL from product page
-        return await parseProductPage(url);
-      }
-      
-      // Use any type for the response as we don't know the exact Walmart API structure
-      interface WalmartApiResponse {
-        payload?: {
-          selected?: {
-            product?: {
-              name?: string;
-              priceInfo?: {
-                currentPrice?: {
-                  price: number;
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      const data = await response.json() as WalmartApiResponse;
-      console.log('Successfully fetched product data from API');
-      
-      // Extract product details from the API response
-      if (data?.payload?.selected?.product) {
-        const product = data.payload.selected.product;
-        const name = product.name || '';
-        const price = product.priceInfo?.currentPrice?.price.toString() || '0.00';
-        
-        console.log(`Found product: ${name}, Price: $${price}`);
-        
-        return { name, price };
-      } else {
-        // If API data structure is unexpected, fall back to directly parsing URL
-        return await parseProductPage(url);
-      }
+      // Directly fetch the product page and parse it
+      return await parseAisleGopherProductPage(url);
     } catch (error) {
-      console.error('Error fetching Walmart product:', error);
-      // Fall back to directly parsing the product page if API approach fails
-      try {
-        return await parseProductPage(url);
-      } catch (fallbackError) {
-        console.error('Fallback parsing also failed:', fallbackError);
-        return {
-          name: 'Error Fetching Product',
-          price: '0.00'
-        };
-      }
+      console.error('Error fetching AisleGopher product:', error);
+      return {
+        name: 'Error Fetching Product',
+        price: '0.00'
+      };
     }
   }
   
-  // Helper function to parse product page directly
-  async function parseProductPage(url: string): Promise<{name: string, price: string}> {
-    console.log('Falling back to direct page parsing');
+  // Helper function to parse AisleGopher product page
+  async function parseAisleGopherProductPage(url: string): Promise<{name: string, price: string}> {
+    console.log('Parsing AisleGopher product page');
     
     const response = await fetch(url, {
       headers: {
@@ -199,29 +147,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch product page: ${response.status}`);
+      throw new Error(`Failed to fetch AisleGopher product page: ${response.status}`);
     }
     
     const html = await response.text();
     
-    // Try to extract the product name from the title tag
-    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+    // Extract product name - typically in the title or h1
     let name = null;
     
+    // Try to extract the product name from the title tag first
+    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     if (titleMatch && titleMatch[1]) {
       name = titleMatch[1]
-        .replace(/ - Walmart\.com$/, '')  // Remove trailing Walmart.com
+        .replace(/ - AisleGopher.*$/, '')  // Remove trailing AisleGopher.com
         .replace(/&#39;/g, "'")           // Replace HTML entities
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
         .trim();
     }
     
-    // Try to find price with multiple patterns
+    // If title extraction fails, try to extract from h1 or other key elements
+    if (!name) {
+      const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      if (h1Match && h1Match[1]) {
+        name = h1Match[1]
+          .replace(/<[^>]+>/g, '')       // Remove any HTML tags
+          .replace(/&#39;/g, "'")        // Replace HTML entities
+          .replace(/&amp;/g, "&")
+          .replace(/&quot;/g, '"')
+          .trim();
+      }
+    }
+    
+    // Extract price - look for common price formats
     let price = null;
     const pricePatterns = [
-      /\$([0-9]+\.[0-9]{2})/,
-      /"currentPrice":\s*{\s*"price":\s*([0-9.]+)/
+      /\$([0-9]+\.[0-9]{2})/,                 // Standard price format like $12.99
+      /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/, // JSON price format
+      /data-price="([0-9]+\.[0-9]{2})"/,      // data-price attribute
+      /price">\$([0-9]+\.[0-9]{2})</          // Price in specific element
     ];
     
     for (const pattern of pricePatterns) {
@@ -232,12 +196,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
-    // Last resort: If we found a title but no price, use a default price
-    if (name && !price) {
-      price = Math.floor(Math.random() * 20) + 1 + '.' + (Math.floor(Math.random() * 90) + 10);
+    // For demonstration, if we can parse the URL, we can infer the product name from it
+    if (!name) {
+      const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
+      if (urlNameMatch && urlNameMatch[1]) {
+        name = urlNameMatch[1]
+          .replace(/-/g, ' ')     // Replace hyphens with spaces
+          .split(' ')             // Split into words
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
+          .join(' ');             // Join back with spaces
+      }
     }
     
-    console.log(`Extracted from page - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
+    console.log(`Extracted from AisleGopher - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
     
     return {
       name: name || 'Product Name Not Found',
@@ -245,21 +216,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   }
 
-  // Route to fetch product info from Walmart URL
-  app.post("/api/fetch-walmart-product", async (req, res) => {
+  // Route to fetch product info from product URL
+  app.post("/api/fetch-product", async (req, res) => {
     try {
       const { url } = req.body;
       
       console.log(`Received request to fetch product info for URL: ${url}`);
       
-      if (!url || !url.includes('walmart.com')) {
+      if (!url) {
         return res.status(400).json({ 
-          error: 'Invalid Walmart URL',
-          message: 'Please provide a valid Walmart product URL (e.g., https://www.walmart.com/ip/...)' 
+          error: 'Invalid URL',
+          message: 'Please provide a valid product URL' 
         });
       }
       
-      const productInfo = await fetchWalmartProductInfo(url);
+      let productInfo;
+      
+      // Check if it's an AisleGopher URL
+      if (url.includes('aislegopher.com')) {
+        productInfo = await fetchAisleGopherProductInfo(url);
+      } else {
+        return res.status(400).json({ 
+          error: 'Unsupported URL',
+          message: 'Please provide a valid AisleGopher product URL (e.g., https://aislegopher.com/p/...)' 
+        });
+      }
       
       // Check if the product information was successfully retrieved
       if (productInfo.name === 'Product Name Not Found' || productInfo.price === '0.00') {
@@ -273,12 +254,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Successfully extracted product info: ${JSON.stringify(productInfo)}`);
       res.json(productInfo);
     } catch (error) {
-      console.error('Error in fetch-walmart-product route:', error);
+      console.error('Error in fetch-product route:', error);
       res.status(500).json({ 
         error: 'Server Error',
         message: 'Failed to fetch product information due to a server error.'
       });
     }
+  });
+  
+  // Maintain backward compatibility with the old endpoint
+  app.post("/api/fetch-walmart-product", async (req, res) => {
+    return res.status(400).json({ 
+      error: 'Service Updated',
+      message: 'This API endpoint has been updated. Please use /api/fetch-product instead.' 
+    });
   });
 
   // Create HTTP server

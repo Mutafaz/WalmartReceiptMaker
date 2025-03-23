@@ -40,7 +40,7 @@ export default function ReceiptForm({
   const { toast } = useToast();
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [walmartUrl, setWalmartUrl] = useState('');
+  const [productUrl, setProductUrl] = useState('');
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   // Handle store info changes
@@ -305,12 +305,12 @@ export default function ReceiptForm({
     }
   };
 
-  // Fetch product info from Walmart URL
-  const fetchWalmartProduct = async () => {
-    if (!walmartUrl.trim() || !walmartUrl.includes('walmart.com')) {
+  // Fetch product info from AisleGopher URL
+  const fetchProductInfo = async () => {
+    if (!productUrl.trim() || !productUrl.includes('aislegopher.com')) {
       toast({
         title: "Invalid URL",
-        description: "Please enter a valid Walmart product URL",
+        description: "Please enter a valid AisleGopher product URL",
         variant: "destructive",
       });
       return;
@@ -320,8 +320,8 @@ export default function ReceiptForm({
     try {
       const response = await apiRequest(
         'POST',
-        '/api/fetch-walmart-product',
-        { url: walmartUrl }
+        '/api/fetch-product',
+        { url: productUrl }
       );
       
       const productData = await response.json();
@@ -339,7 +339,7 @@ export default function ReceiptForm({
         ]);
 
         // Clear the URL field
-        setWalmartUrl('');
+        setProductUrl('');
 
         toast({
           title: "Product Added",
@@ -349,7 +349,7 @@ export default function ReceiptForm({
         throw new Error("Invalid product data received");
       }
     } catch (error) {
-      console.error("Error fetching Walmart product:", error);
+      console.error("Error fetching product:", error);
       toast({
         title: "Failed to Fetch Product",
         description: "Unable to extract product information from the provided URL. Please try again or add the item manually.",
@@ -568,9 +568,9 @@ export default function ReceiptForm({
             </Button>
           </div>
 
-          {/* Walmart Product URL Input */}
+          {/* AisleGopher Product URL Input */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <Label htmlFor="walmart-url" className="text-sm font-medium flex items-center mb-2">
+            <Label htmlFor="product-url" className="text-sm font-medium flex items-center mb-2">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 20 20" 
@@ -583,19 +583,19 @@ export default function ReceiptForm({
                   clipRule="evenodd" 
                 />
               </svg>
-              Add item from Walmart.com
+              Add item from AisleGopher.com
             </Label>
             <div className="flex space-x-2">
               <Input
-                id="walmart-url"
-                placeholder="Paste Walmart product URL (e.g., https://www.walmart.com/ip/...)"
-                value={walmartUrl}
-                onChange={(e) => setWalmartUrl(e.target.value)}
+                id="product-url"
+                placeholder="Paste AisleGopher product URL (e.g., https://aislegopher.com/p/...)"
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
                 className="flex-1"
               />
               <Button 
-                onClick={fetchWalmartProduct} 
-                disabled={isLoadingProduct || !walmartUrl.includes('walmart.com')}
+                onClick={fetchProductInfo} 
+                disabled={isLoadingProduct || !productUrl.includes('aislegopher.com')}
                 className="bg-walmart-blue hover:bg-blue-600 text-white"
               >
                 {isLoadingProduct ? (
@@ -639,7 +639,7 @@ export default function ReceiptForm({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Paste a link to any Walmart product to automatically extract the name and price
+              Paste a link to any AisleGopher product to automatically extract the name and price
             </p>
           </div>
 
