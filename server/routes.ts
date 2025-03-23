@@ -124,8 +124,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productId = productIdMatch[1];
       console.log(`Extracted product ID: ${productId}`);
       
-      // Directly fetch the product page and parse it
-      return await parseAisleGopherProductPage(url);
+      // Use AisleGopher's API to fetch product info
+      const apiUrl = `https://aislegopher.com/api/products/${productId}`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch product from API: ${response.status}`);
+      }
+      
+      const productData = await response.json();
+      
+      if (!productData || !productData.name || !productData.price) {
+        throw new Error('Invalid product data received from API');
+      }
+      
+      return {
+        name: productData.name,
+        price: productData.price.toString()
+      };
     } catch (error) {
       console.error('Error fetching AisleGopher product:', error);
       return {
