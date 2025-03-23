@@ -311,63 +311,58 @@ export default function ReceiptForm({
     }
   };
 
-  // Fetch product info from AisleGopher URL
+  const handleAddItem = () => {
+    const newItem: ReceiptItem = {
+      id: nanoid(),
+      name: "",
+      price: "0.00",
+      quantity: "1"
+    };
+    setItems([...items, newItem]);
+  };
+
   const fetchProductInfo = async () => {
-    if (!productUrl.trim() || !productUrl.includes('aislegopher.com')) {
-      toast({
-        title: "Invalid URL",
-        description: "Please enter a valid AisleGopher product URL",
-        variant: "destructive",
-      });
+    if (!productUrl || !productUrl.includes('aislegopher.com')) {
+      toast.error("Please enter a valid AisleGopher product URL");
       return;
     }
 
     setIsLoadingProduct(true);
     try {
-      console.log('Fetching product from URL:', productUrl); // Debug log
-      const response = await apiRequest(
-        'POST',
-        '/api/fetch-product',
-        { url: productUrl }
-      );
-      
+      console.log('Fetching product from URL:', productUrl);
+      const response = await fetch('/api/fetch-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: productUrl }),
+      });
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch product');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch product');
       }
 
       const productData = await response.json();
-      console.log('Received product data:', productData); // Debug log
+      console.log('Received product data:', productData);
 
-      if (productData && productData.name && productData.price) {
-        // Add the product as a new item
-        setItems(prev => [
-          ...prev,
-          { 
-            id: nanoid(), 
-            name: productData.name, 
-            price: productData.price, 
-            quantity: "1" 
-          }
-        ]);
-
-        // Clear the URL field
-        setProductUrl('');
-
-        toast({
-          title: "Product Added",
-          description: `Successfully added "${productData.name}" to your receipt.`,
-        });
-      } else {
-        throw new Error("Invalid product data received");
+      if (!productData.name || !productData.price) {
+        throw new Error('Invalid product data received');
       }
+
+      const newItem: ReceiptItem = {
+        id: nanoid(),
+        name: productData.name,
+        price: productData.price,
+        quantity: "1"
+      };
+
+      setItems(prev => [...prev, newItem]);
+      setProductUrl("");
+      toast.success("Product added successfully!");
     } catch (error) {
-      console.error("Error fetching product:", error);
-      toast({
-        title: "Failed to Fetch Product",
-        description: error instanceof Error ? error.message : "Unable to extract product information. Please try again or add the item manually.",
-        variant: "destructive",
-      });
+      console.error('Error fetching product:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to fetch product");
     } finally {
       setIsLoadingProduct(false);
     }
@@ -727,6 +722,39 @@ export default function ReceiptForm({
           </div>
         </CardContent>
       </Card>
+
+      {/* Product URL Input */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Add Item from AisleGopher
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={productUrl}
+            onChange={(e) => setProductUrl(e.target.value)}
+            placeholder="Paste AisleGopher product URL"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-walmart-blue"
+          />
+          <button
+            onClick={fetchProductInfo}
+            disabled={isLoadingProduct}
+            className="bg-walmart-blue text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-walmart-blue disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoadingProduct ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Fetching...
+              </span>
+            ) : (
+              "Fetch Product"
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Payment Details */}
       <Card>
