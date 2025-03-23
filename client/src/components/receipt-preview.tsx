@@ -37,7 +37,7 @@ export default function ReceiptPreview({
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold mb-2 text-center">Receipt Preview</h2>
           
-          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-sm leading-tight text-black">
+          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-sm leading-tight text-black font-semibold">
             {/* Store Logo and Info */}
             <div className="text-center mb-4">
               {storeInfo.useCustomLogo && storeInfo.customLogo ? (
@@ -83,7 +83,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Items List */}
-            <div className="border-t border-b border-dotted border-gray-400 py-2 mb-3">
+            <div className="border-t border-b border-dotted border-black py-2 mb-3">
               {items.map((item) => (
                 <div key={item.id} className="flex justify-between mb-1">
                   <div>
@@ -112,7 +112,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Payment Method */}
-            <div className="border-t border-dotted border-gray-400 pt-2 mb-3">
+            <div className="border-t border-dotted border-black pt-2 mb-3">
               <div className="flex justify-between">
                 <div>{paymentInfo.method} TEND</div>
                 <div>{total.toFixed(2)}</div>

@@ -594,6 +594,76 @@ export default function ReceiptForm({
               </Select>
             </div>
           </div>
+          
+          {paymentInfo.method !== "CASH" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label htmlFor="payment-cardLastFour">Card Last 4 Digits</Label>
+                <Input
+                  id="payment-cardLastFour"
+                  maxLength={4}
+                  placeholder="1234"
+                  value={paymentInfo.cardLastFour}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment-change">Change Due</Label>
+                <Input
+                  id="payment-change"
+                  placeholder="0.00"
+                  value={paymentInfo.change}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment-approvalCode">Approval Code</Label>
+                <Input
+                  id="payment-approvalCode"
+                  placeholder="123456"
+                  value={paymentInfo.approvalCode}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment-referenceNumber">Reference Number</Label>
+                <Input
+                  id="payment-referenceNumber"
+                  placeholder="123456789"
+                  value={paymentInfo.referenceNumber}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment-networkId">Network ID</Label>
+                <Input
+                  id="payment-networkId"
+                  placeholder="123456"
+                  value={paymentInfo.networkId}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment-aid">AID</Label>
+                <Input
+                  id="payment-aid"
+                  placeholder="A0000000012345"
+                  value={paymentInfo.aid}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment-arc">ARC</Label>
+                <Input
+                  id="payment-arc"
+                  placeholder="00"
+                  value={paymentInfo.arc}
+                  onChange={handlePaymentInfoChange}
+                />
+              </div>
+            </div>
+          )}
+          
           <Separator className="my-4" />
           <div className="flex justify-between pt-2">
             <Button
