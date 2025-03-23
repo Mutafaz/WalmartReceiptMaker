@@ -12,6 +12,7 @@ import { StoreInfo, ReceiptInfo, PaymentInfo, ReceiptItem } from "@/pages/home";
 import { nanoid } from "nanoid";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { fillReceiptToTotal } from "@/utils/grocery-items";
 
 interface ReceiptFormProps {
   storeInfo: StoreInfo;
