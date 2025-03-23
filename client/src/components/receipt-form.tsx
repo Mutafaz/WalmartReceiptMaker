@@ -587,6 +587,78 @@ export default function ReceiptForm({
             </Button>
           </div>
 
+          {/* Aisle Gopher Product Fetcher */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm font-medium flex items-center">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor" 
+                  className="w-4 h-4 mr-1 text-blue-600"
+                >
+                  <path 
+                    fillRule="evenodd" 
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" 
+                    clipRule="evenodd" 
+                  />
+                </svg>
+                Add Item from Aisle Gopher
+              </Label>
+              <Button
+                onClick={() => window.open('https://aislegopher.com', '_blank')}
+                variant="outline"
+                size="sm"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-4 w-4 mr-1" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                  />
+                </svg>
+                Visit Aisle Gopher
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                placeholder="Paste AisleGopher product URL"
+                className="flex-1"
+              />
+              <Button
+                onClick={fetchProductInfo}
+                disabled={isLoadingProduct}
+                className="bg-walmart-blue hover:bg-blue-600 text-white"
+              >
+                {isLoadingProduct ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Fetching...
+                  </span>
+                ) : (
+                  "Fetch Product"
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-blue-700 mt-1">
+              Paste an Aisle Gopher product URL to automatically add it to your receipt.
+            </p>
+          </div>
+
           {/* Target Total Feature */}
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
             <Label htmlFor="target-total" className="text-sm font-medium flex items-center mb-2">
@@ -733,39 +805,6 @@ export default function ReceiptForm({
           </div>
         </CardContent>
       </Card>
-
-      {/* Product URL Input */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Add Item from AisleGopher
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={productUrl}
-            onChange={(e) => setProductUrl(e.target.value)}
-            placeholder="Paste AisleGopher product URL"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-walmart-blue"
-          />
-          <button
-            onClick={fetchProductInfo}
-            disabled={isLoadingProduct}
-            className="bg-walmart-blue text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-walmart-blue disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoadingProduct ? (
-              <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Fetching...
-              </span>
-            ) : (
-              "Fetch Product"
-            )}
-          </button>
-        </div>
-      </div>
 
       {/* Payment Details */}
       <Card>
