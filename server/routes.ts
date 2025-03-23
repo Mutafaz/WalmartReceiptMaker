@@ -4,40 +4,30 @@ import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import fetch from "node-fetch";
 
-interface AisleGopherProduct {
+interface ProductInfo {
   name: string;
   price: string;
 }
 
-async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
+async function parseProductFromUrl(url: string): Promise<ProductInfo> {
   try {
-    console.log('Starting fetch for URL:', url);
-    
-    // Extract product name from URL first
+    // Extract product name from URL
     const nameMatch = url.match(/\/p\/([^/]+)\/\d+$/);
     if (!nameMatch) {
-      console.log('Failed to extract name from URL. Full URL:', url);
       throw new Error("Could not extract product name from URL");
     }
     const name = nameMatch[1]
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-    
-    console.log('Extracted name:', name);
 
-    // Since we can't directly fetch from AisleGopher, we'll use a default price
-    // and let the user modify it if needed
-    const price = "249.99"; // Default price for AirPods Pro 2
+    // Use a default price that can be modified later
+    const price = "0.00";
 
-    const productInfo = { name, price };
-    console.log('Using default product info:', productInfo);
-
-    return productInfo;
+    return { name, price };
   } catch (error) {
-    console.error("Error parsing AisleGopher product page:", error);
+    console.error("Error parsing product from URL:", error);
     throw error;
   }
 }
@@ -149,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "PDF generation handled client-side" });
   });
 
-  // Fetch product info from AisleGopher
+  // Parse product from URL
   app.post("/api/fetch-product", async (req: Request, res: Response) => {
     try {
       let { url } = req.body;
@@ -163,47 +153,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove @ symbol if present at the start of the URL
       url = url.replace(/^@/, '');
 
-      if (!url.includes('aislegopher.com')) {
-        return res.status(400).json({ 
-          message: "Please provide a valid AisleGopher product URL (should contain aislegopher.com)" 
-        });
-      }
-
-      if (!url.match(/\/p\/[^/]+\/\d+$/)) {
-        return res.status(400).json({ 
-          message: "Invalid product URL format. URL should end with /p/product-name/number" 
-        });
-      }
-
-      console.log('Starting product fetch for URL:', url);
-      
       try {
-        const productInfo = await parseAisleGopherProductPage(url);
-        console.log('Successfully fetched product:', productInfo);
+        const productInfo = await parseProductFromUrl(url);
+        console.log('Successfully parsed product:', productInfo);
         res.json(productInfo);
-      } catch (fetchError) {
-        console.error('Error in parseAisleGopherProductPage:', fetchError);
-        
-        // Send a more specific error message based on the error type
-        if (fetchError instanceof Error) {
-          if (fetchError.message.includes('Failed to fetch product page')) {
-            return res.status(502).json({
-              message: "Unable to access the product page. The AisleGopher website may be temporarily unavailable."
-            });
-          } else if (fetchError.message.includes('Could not extract product name')) {
-            return res.status(400).json({
-              message: "Could not extract product information from the URL. Please make sure you're using a valid product URL."
-            });
-          } else if (fetchError.message.includes('Could not find product price')) {
-            return res.status(404).json({
-              message: "Could not find the product price. The product may no longer be available."
-            });
-          }
-        }
-        
-        // Generic error message as fallback
-        res.status(500).json({ 
-          message: "Failed to fetch product information. Please try again or add the item manually." 
+      } catch (parseError) {
+        console.error('Error parsing product URL:', parseError);
+        return res.status(400).json({
+          message: "Could not extract product information from the URL. Please enter the item details manually."
         });
       }
     } catch (error) {
