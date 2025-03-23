@@ -435,6 +435,38 @@ export default function ReceiptForm({
                 onChange={handleReceiptInfoChange}
               />
             </div>
+            <div>
+              <Label htmlFor="terminal">Terminal ID</Label>
+              <Input
+                id="terminal"
+                value={receiptInfo.terminal}
+                onChange={handleReceiptInfoChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="operator">Operator ID</Label>
+              <Input
+                id="operator"
+                value={receiptInfo.operator}
+                onChange={handleReceiptInfoChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="store-manager">Store Manager</Label>
+              <Input
+                id="store-manager"
+                value={storeInfo.manager}
+                onChange={handleStoreInfoChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="store-surveyCode">Survey Code</Label>
+              <Input
+                id="store-surveyCode"
+                value={storeInfo.surveyCode}
+                onChange={handleStoreInfoChange}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
