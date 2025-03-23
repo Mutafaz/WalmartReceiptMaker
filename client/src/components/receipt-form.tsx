@@ -570,45 +570,21 @@ export default function ReceiptForm({
 
           {/* AisleGopher Product URL Input */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex justify-between items-center mb-2">
-              <Label htmlFor="product-url" className="text-sm font-medium flex items-center">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor" 
-                  className="w-4 h-4 mr-1 text-blue-500"
-                >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" 
-                    clipRule="evenodd" 
-                  />
-                </svg>
-                Add item from AisleGopher.com
-              </Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open('https://aislegopher.com', '_blank')}
-                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            <Label htmlFor="product-url" className="text-sm font-medium flex items-center mb-2">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 20 20" 
+                fill="currentColor" 
+                className="w-4 h-4 mr-1 text-blue-500"
               >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-4 w-4 mr-1" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
-                  />
-                </svg>
-                Open AisleGopher
-              </Button>
-            </div>
+                <path 
+                  fillRule="evenodd" 
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+              Add item from AisleGopher.com
+            </Label>
             <div className="flex space-x-2">
               <Input
                 id="product-url"

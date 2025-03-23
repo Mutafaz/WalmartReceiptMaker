@@ -1,22 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
-import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-
-// Enable CORS for all routes
-app.use(cors({
-  origin: [
-    'https://walmart-receipt-maker.vercel.app',
-    'http://localhost:3001',
-    'http://localhost:5173' // Vite's default dev server port
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -70,9 +56,9 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 3001
+  // ALWAYS serve the app on port 3000
   // this serves both the API and the client.
-  const port = 3001;
+  const port = 3000;
   server.listen(port, () => {
     log(`serving on port ${port}`);
   });
