@@ -323,7 +323,11 @@ export default function ReceiptForm({
 
   const fetchProductInfo = async () => {
     if (!productUrl || !productUrl.includes('aislegopher.com')) {
-      toast.error("Please enter a valid AisleGopher product URL");
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid AisleGopher product URL",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -359,10 +363,17 @@ export default function ReceiptForm({
 
       setItems(prev => [...prev, newItem]);
       setProductUrl("");
-      toast.success("Product added successfully!");
+      toast({
+        title: "Success",
+        description: "Product added successfully!",
+      });
     } catch (error) {
       console.error('Error fetching product:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to fetch product");
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch product",
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingProduct(false);
     }
