@@ -13,47 +13,63 @@ interface AisleGopherProduct {
 
 async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
   try {
+    console.log('Starting fetch for URL:', url);
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
         'Cache-Control': 'max-age=0'
-      }
+      },
+      redirect: 'follow',
+      follow: 5
     });
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch product page: ${response.status} ${response.statusText}`);
     }
     
     const html = await response.text();
-    console.log('Fetched HTML:', html.substring(0, 500)); // Log first 500 chars for debugging
+    console.log('Response length:', html.length);
+    console.log('First 500 chars:', html.substring(0, 500));
     
     // Extract product name from URL
     const nameMatch = url.match(/\/p\/([^/]+)\/\d+$/);
     if (!nameMatch) {
+      console.log('Failed to extract name from URL. Full URL:', url);
       throw new Error("Could not extract product name from URL");
     }
     const name = nameMatch[1]
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    
+    console.log('Extracted name:', name);
 
     // Try to find price in various formats
     const pricePatterns = [
       /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/,  // JSON price format
       /data-price="([0-9]+\.[0-9]{2})"/,       // Data-price attribute
-      /current-price[^>]*>([0-9]+\.[0-9]{2})</, // Current price class
-      /product-price[^>]*>([0-9]+\.[0-9]{2})</, // Product price class
-      /item-price[^>]*>([0-9]+\.[0-9]{2})</,    // Item price class
-      /<span[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Price in span
-      /<div[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price in div
-      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,     // Price in p
-      /<span[^>]*>([0-9]+\.[0-9]{2})<\/span>/,  // Price in any span
-      /<div[^>]*>([0-9]+\.[0-9]{2})<\/div>/,    // Price in any div
-      /<p[^>]*>([0-9]+\.[0-9]{2})<\/p>/         // Price in any p
+      /current-price[^>]*>\$?([0-9]+\.[0-9]{2})</, // Current price class
+      /product-price[^>]*>\$?([0-9]+\.[0-9]{2})</, // Product price class
+      /item-price[^>]*>\$?([0-9]+\.[0-9]{2})</,    // Item price class
+      /<span[^>]*class="[^"]*price[^"]*"[^>]*>\$?([0-9]+\.[0-9]{2})</,  // Price in span
+      /<div[^>]*class="[^"]*price[^"]*"[^>]*>\$?([0-9]+\.[0-9]{2})</,   // Price in div
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>\$?([0-9]+\.[0-9]{2})</,     // Price in p
+      /<span[^>]*>\$?([0-9]+\.[0-9]{2})<\/span>/,  // Price in any span
+      /<div[^>]*>\$?([0-9]+\.[0-9]{2})<\/div>/,    // Price in any div
+      /<p[^>]*>\$?([0-9]+\.[0-9]{2})<\/p>/,        // Price in any p
+      /\$([0-9]+\.[0-9]{2})/                       // Any dollar amount
     ];
 
     let price = "0.00";
@@ -61,32 +77,37 @@ async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProd
       const match = html.match(pattern);
       if (match) {
         price = match[1];
-        console.log('Found price with pattern:', pattern); // Log which pattern matched
+        console.log('Found price:', price, 'with pattern:', pattern);
         break;
       }
     }
 
     // If no price found in initial patterns, try meta tags and script tags
     if (price === "0.00") {
+      console.log('No price found in initial patterns, trying meta tags...');
       const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([0-9]+\.[0-9]{2})"/);
       if (metaPriceMatch) {
         price = metaPriceMatch[1];
-        console.log('Found price in meta tag');
+        console.log('Found price in meta tag:', price);
       } else {
+        console.log('Trying script tags...');
         const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
         if (scriptPriceMatch) {
           price = scriptPriceMatch[1];
-          console.log('Found price in script tag');
+          console.log('Found price in script tag:', price);
         }
       }
     }
 
-    console.log('Final product info:', { name, price }); // Log final product info
+    if (price === "0.00") {
+      console.log('No price found in HTML. Content may be dynamic or protected.');
+      throw new Error('Could not find product price on the page');
+    }
 
-    return {
-      name,
-      price
-    };
+    const productInfo = { name, price };
+    console.log('Final product info:', productInfo);
+
+    return productInfo;
   } catch (error) {
     console.error("Error parsing AisleGopher product page:", error);
     throw error;
@@ -205,19 +226,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { url } = req.body;
       
-      if (!url || typeof url !== 'string' || !url.includes('aislegopher.com')) {
+      if (!url || typeof url !== 'string') {
         return res.status(400).json({ 
-          message: "Invalid URL. Please provide a valid AisleGopher product URL." 
+          message: "Please provide a product URL" 
         });
       }
 
-      console.log('Fetching product from URL:', url); // Log the URL being fetched
-      const productInfo = await parseAisleGopherProductPage(url);
-      res.json(productInfo);
+      if (!url.includes('aislegopher.com')) {
+        return res.status(400).json({ 
+          message: "Please provide a valid AisleGopher product URL (should contain aislegopher.com)" 
+        });
+      }
+
+      if (!url.match(/\/p\/[^/]+\/\d+$/)) {
+        return res.status(400).json({ 
+          message: "Invalid product URL format. URL should end with /p/product-name/number" 
+        });
+      }
+
+      console.log('Starting product fetch for URL:', url);
+      
+      try {
+        const productInfo = await parseAisleGopherProductPage(url);
+        console.log('Successfully fetched product:', productInfo);
+        res.json(productInfo);
+      } catch (fetchError) {
+        console.error('Error in parseAisleGopherProductPage:', fetchError);
+        
+        // Send a more specific error message based on the error type
+        if (fetchError instanceof Error) {
+          if (fetchError.message.includes('Failed to fetch product page')) {
+            return res.status(502).json({
+              message: "Unable to access the product page. The AisleGopher website may be temporarily unavailable."
+            });
+          } else if (fetchError.message.includes('Could not extract product name')) {
+            return res.status(400).json({
+              message: "Could not extract product information from the URL. Please make sure you're using a valid product URL."
+            });
+          } else if (fetchError.message.includes('Could not find product price')) {
+            return res.status(404).json({
+              message: "Could not find the product price. The product may no longer be available."
+            });
+          }
+        }
+        
+        // Generic error message as fallback
+        res.status(500).json({ 
+          message: "Failed to fetch product information. Please try again or add the item manually." 
+        });
+      }
     } catch (error) {
-      console.error("Error fetching product info:", error);
+      console.error("Unexpected error in fetch-product endpoint:", error);
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to fetch product information. Please try again or add the item manually." 
+        message: "An unexpected error occurred. Please try again later." 
       });
     }
   });
