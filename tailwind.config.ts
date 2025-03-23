@@ -41,6 +41,12 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        walmart: {
+          blue: "#0071dc",
+          yellow: "#ffc220",
+          black: "#212121", 
+          gray: "#f2f2f2"
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
