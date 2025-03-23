@@ -357,28 +357,6 @@ export default function ReceiptForm({
     }
   };
 
-  const randomizeInfo = () => {
-    const randomString = (length: number) => {
-      let result = '';
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      const charactersLength = characters.length;
-      for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-      }
-      return result;
-    };
-
-    setPaymentInfo(prev => ({
-      ...prev,
-      approvalCode: randomString(6),
-      referenceNumber: randomString(10),
-      networkId: randomString(4),
-      aid: `A${randomString(12)}`,
-      arc: `R${randomString(12)}`
-    }));
-  };
-
-
   return (
     <div className="lg:col-span-3 space-y-6">
       {/* Logo Customization */}
