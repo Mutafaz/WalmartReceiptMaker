@@ -47,8 +47,12 @@ export default function ReceiptPreview({
                   className="h-12 mx-auto mb-2"
                 />
               ) : (
-                <div className="text-center tracking-tight">
-                  <div className="text-2xl font-extrabold uppercase tracking-widest text-walmart-blue">Walmart</div>
+                <div className="text-center">
+                  <img 
+                    src="/walmart-logo.png" 
+                    alt="Walmart logo" 
+                    className="h-8 mx-auto mb-2"
+                  />
                   <div className="text-[10px] font-semibold mb-2 text-walmart-black">Save money. Live better.</div>
                 </div>
               )}
