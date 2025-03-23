@@ -304,9 +304,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Function to fetch product information from Walmart URL using pricetracker.wtf
   async function fetchWalmartProductInfo(url: string): Promise<{name: string, price: string}> {
     try {
-      console.log(`Processing Walmart URL: ${url}`);
+      console.log(`Processing URL: ${url}`);
       
-      // Extract the product ID from the Walmart URL
+      // Check if it's a pricetracker.wtf URL
+      if (url.includes('pricetracker.wtf')) {
+        const productIdMatch = url.match(/\/product\/([^\/]+)/);
+        if (!productIdMatch || !productIdMatch[1]) {
+          throw new Error('Could not extract product ID from pricetracker.wtf URL');
+        }
+        
+        const productId = productIdMatch[1];
+        console.log(`Extracted product ID: ${productId}`);
+        
+        // Fetch the product page from pricetracker.wtf
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch product page: ${response.status}`);
+        }
+        
+        const html = await response.text();
+        
+        // Extract product name from the page title
+        const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+        if (!titleMatch || !titleMatch[1]) {
+          throw new Error('Could not find product name in page');
+        }
+        
+        const name = titleMatch[1]
+          .replace(/ - Price Tracker.*$/, '')  // Remove trailing text
+          .replace(/&#39;/g, "'")              // Replace HTML entities
+          .replace(/&amp;/g, "&")
+          .replace(/&quot;/g, '"')
+          .trim();
+        
+        // Extract price from the page
+        const priceMatch = html.match(/"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/);
+        if (!priceMatch || !priceMatch[1]) {
+          throw new Error('Could not find product price in page');
+        }
+        
+        return {
+          name,
+          price: priceMatch[1]
+        };
+      }
+      
+      // If it's a Walmart URL, extract the product ID and use pricetracker.wtf
       const productIdMatch = url.match(/\/ip\/([^\/]+)/);
       if (!productIdMatch || !productIdMatch[1]) {
         throw new Error('Could not extract product ID from Walmart URL');
@@ -315,37 +364,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productId = productIdMatch[1];
       console.log(`Extracted product ID: ${productId}`);
       
-      // Use pricetracker.wtf API to fetch product info
-      const apiUrl = `https://pricetracker.wtf/api/products/${productId}`;
-      console.log(`Fetching from pricetracker.wtf: ${apiUrl}`);
+      // Construct the pricetracker.wtf URL
+      const pricetrackerUrl = `https://pricetracker.wtf/product/${productId}`;
+      console.log(`Fetching from pricetracker.wtf: ${pricetrackerUrl}`);
       
-      const response = await fetch(apiUrl, {
+      const response = await fetch(pricetrackerUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Origin': 'https://pricetracker.wtf',
-          'Referer': 'https://pricetracker.wtf/'
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         }
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch product from API: ${response.status}`);
+        throw new Error(`Failed to fetch product page: ${response.status}`);
       }
       
-      const data = await response.json() as PriceTrackerProduct;
-      console.log('Received API response:', data);
+      const html = await response.text();
       
-      if (!data || typeof data.name !== 'string' || typeof data.price !== 'number') {
-        throw new Error('Invalid product data received from API');
+      // Extract product name from the page title
+      const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+      if (!titleMatch || !titleMatch[1]) {
+        throw new Error('Could not find product name in page');
+      }
+      
+      const name = titleMatch[1]
+        .replace(/ - Price Tracker.*$/, '')  // Remove trailing text
+        .replace(/&#39;/g, "'")              // Replace HTML entities
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .trim();
+      
+      // Extract price from the page
+      const priceMatch = html.match(/"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/);
+      if (!priceMatch || !priceMatch[1]) {
+        throw new Error('Could not find product price in page');
       }
       
       return {
-        name: data.name,
-        price: data.price.toString()
+        name,
+        price: priceMatch[1]
       };
     } catch (error) {
-      console.error('Error fetching Walmart product:', error);
+      console.error('Error fetching product:', error);
       throw error;
     }
   }
