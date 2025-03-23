@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import fetch from "node-fetch";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
@@ -102,6 +103,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // and return a PDF buffer or URL, but we're handling this client-side
     // with html2canvas and jsPDF for this implementation
     res.json({ message: "PDF generation handled client-side" });
+  });
+
+  // Function to fetch product information from Walmart URL
+  async function fetchWalmartProductInfo(url: string) {
+    try {
+      // Fetch the HTML content from the Walmart product page
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch product page: ${response.status}`);
+      }
+      
+      const html = await response.text();
+      
+      // Extract product name and price using regex patterns
+      // This is a simplified approach and might need adjustments based on Walmart's HTML structure
+      const nameMatch = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      const priceMatch = html.match(/\$([0-9]+\.[0-9]{2})/);
+      
+      const name = nameMatch ? nameMatch[1].replace(/<[^>]*>/g, '').trim() : null;
+      const price = priceMatch ? priceMatch[1] : null;
+      
+      return {
+        name: name || 'Product Name Not Found',
+        price: price || '0.00'
+      };
+    } catch (error) {
+      console.error('Error fetching Walmart product:', error);
+      return {
+        name: 'Error Fetching Product',
+        price: '0.00'
+      };
+    }
+  }
+
+  // Route to fetch product info from Walmart URL
+  app.post("/api/fetch-walmart-product", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url || !url.includes('walmart.com')) {
+        return res.status(400).json({ error: 'Invalid Walmart URL' });
+      }
+      
+      const productInfo = await fetchWalmartProductInfo(url);
+      res.json(productInfo);
+    } catch (error) {
+      console.error('Error in fetch-walmart-product route:', error);
+      res.status(500).json({ error: 'Failed to fetch product information' });
+    }
   });
 
   // Create HTTP server
