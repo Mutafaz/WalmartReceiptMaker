@@ -342,15 +342,29 @@ export default function ReceiptForm({
         body: JSON.stringify({ url: productUrl }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch product');
+      let errorMessage = 'Failed to fetch product';
+      let productData;
+
+      try {
+        const text = await response.text();
+        try {
+          productData = JSON.parse(text);
+          if (!response.ok) {
+            errorMessage = productData.message || errorMessage;
+            throw new Error(errorMessage);
+          }
+        } catch (parseError) {
+          console.error('Error parsing JSON:', text);
+          throw new Error('Invalid response from server');
+        }
+      } catch (textError) {
+        console.error('Error reading response:', textError);
+        throw new Error('Failed to read server response');
       }
 
-      const productData = await response.json();
       console.log('Received product data:', productData);
 
-      if (!productData.name || !productData.price) {
+      if (!productData || !productData.name || !productData.price) {
         throw new Error('Invalid product data received');
       }
 
@@ -371,7 +385,7 @@ export default function ReceiptForm({
       console.error('Error fetching product:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch product",
+        description: error instanceof Error ? error.message : "Failed to fetch product information. Please try again.",
         variant: "destructive",
       });
     } finally {
