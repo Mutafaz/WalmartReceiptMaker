@@ -523,6 +523,14 @@ export default function ReceiptForm({
                 onChange={handleStoreInfoChange}
               />
             </div>
+            <Button 
+              type="button"
+              className="w-full mt-4"
+              onClick={() => randomizeInfo()}
+              variant="outline"
+            >
+              Randomize Information
+            </Button>
           </div>
         </CardContent>
       </Card>

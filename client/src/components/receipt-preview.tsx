@@ -106,7 +106,7 @@ export default function ReceiptPreview({
                 <div className="text-right w-12">{subtotal.toFixed(2)}</div>
               </div>
               <div className="flex justify-between">
-                <div className="text-left flex-1">TAX 1 {paymentInfo.taxRate}%</div>
+                <div className="text-left flex-1">TAX {paymentInfo.taxRate}%</div>
                 <div className="text-right w-12">{taxAmount.toFixed(2)}</div>
               </div>
               <div className="flex justify-between">

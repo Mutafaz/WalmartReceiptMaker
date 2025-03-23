@@ -42,6 +42,8 @@ export type ReceiptItem = {
   quantity: string;
 };
 
+import { generateRandomId, generateRandomPhone, generateRandomManager, generateRandomLocation, generateRandomSurveyCode, generateRandomStoreNumber } from "@/utils/random";
+
 export default function Home() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [storeInfo, setStoreInfo] = useState<StoreInfo>({
@@ -63,6 +65,26 @@ export default function Home() {
     terminal: "SC011053",
     operator: "00482"
   });
+
+  const randomizeInfo = () => {
+    const location = generateRandomLocation();
+    setStoreInfo(prev => ({
+      ...prev,
+      number: generateRandomStoreNumber(),
+      city: location.city,
+      stateZip: location.stateZip,
+      phone: generateRandomPhone(),
+      manager: generateRandomManager(),
+      surveyCode: generateRandomSurveyCode()
+    }));
+
+    setReceiptInfo(prev => ({
+      ...prev,
+      cashier: generateRandomManager().split(' ')[0],
+      terminal: `SC${generateRandomId(6)}`,
+      operator: generateRandomId(5)
+    }));
+  };
 
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
     taxRate: "6.625",
