@@ -114,47 +114,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Function to fetch product information from AisleGopher URL
   async function fetchAisleGopherProductInfo(url: string): Promise<{name: string, price: string}> {
     try {
-      console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
+      console.log(`Processing AisleGopher URL: ${url}`);
       
-      // Extract product ID from URL
-      const productIdMatch = url.match(/\/(\d+)$/);
-      if (!productIdMatch) {
-        throw new Error('Could not extract product ID from URL');
+      // Extract product name from URL
+      const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
+      if (!urlNameMatch || !urlNameMatch[1]) {
+        throw new Error('Could not extract product name from URL');
       }
       
-      const productId = productIdMatch[1];
-      console.log(`Extracted product ID: ${productId}`);
+      // Format the product name
+      const name = urlNameMatch[1]
+        .replace(/-/g, ' ')     // Replace hyphens with spaces
+        .split(' ')             // Split into words
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
+        .join(' ');             // Join back with spaces
       
-      // Use AisleGopher's API endpoint
-      const apiUrl = `https://aislegopher.com/api/products/${productId}`;
-      console.log(`Fetching from API: ${apiUrl}`);
+      console.log('Extracted name from URL:', name);
       
-      const response = await fetch(apiUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Origin': 'https://aislegopher.com',
-          'Referer': 'https://aislegopher.com/'
-        }
-      });
-      
-      if (!response.ok) {
-        console.error(`Failed to fetch from API: ${response.status}`);
-        throw new Error(`Failed to fetch from API: ${response.status}`);
-      }
-      
-      const data = await response.json() as AisleGopherProduct;
-      console.log('Received API response:', data);
+      // For now, we'll use a default price since we can't reliably get it from the URL
+      const price = '0.00';
       
       return {
-        name: data.name,
-        price: data.price.toString()
+        name,
+        price
       };
     } catch (error) {
-      console.error('Error fetching AisleGopher product:', error);
-      // Fallback to HTML parsing if API fails
-      return await parseAisleGopherProductPage(url);
+      console.error('Error processing AisleGopher URL:', error);
+      throw error;
     }
   }
   
