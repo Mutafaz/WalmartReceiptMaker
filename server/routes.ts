@@ -6,20 +6,25 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import fetch from "node-fetch";
 
-interface AisleGopherProduct {
-  name: string;
-  price: string;
-}
-
-// Function to parse AisleGopher product page
 async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0'
+      }
+    });
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch product page: ${response.statusText}`);
+      throw new Error(`Failed to fetch product page: ${response.status} ${response.statusText}`);
     }
     
     const html = await response.text();
+    console.log('Fetched HTML:', html.substring(0, 500)); // Log first 500 chars for debugging
     
     // Extract product name from URL
     const nameMatch = url.match(/\/p\/([^/]+)\/\d+$/);
@@ -40,7 +45,10 @@ async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProd
       /item-price[^>]*>([0-9]+\.[0-9]{2})</,    // Item price class
       /<span[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Price in span
       /<div[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price in div
-      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</      // Price in p
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,     // Price in p
+      /<span[^>]*>([0-9]+\.[0-9]{2})<\/span>/,  // Price in any span
+      /<div[^>]*>([0-9]+\.[0-9]{2})<\/div>/,    // Price in any div
+      /<p[^>]*>([0-9]+\.[0-9]{2})<\/p>/         // Price in any p
     ];
 
     let price = "0.00";
@@ -48,6 +56,7 @@ async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProd
       const match = html.match(pattern);
       if (match) {
         price = match[1];
+        console.log('Found price with pattern:', pattern); // Log which pattern matched
         break;
       }
     }
@@ -57,13 +66,17 @@ async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProd
       const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([0-9]+\.[0-9]{2})"/);
       if (metaPriceMatch) {
         price = metaPriceMatch[1];
+        console.log('Found price in meta tag');
       } else {
         const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
         if (scriptPriceMatch) {
           price = scriptPriceMatch[1];
+          console.log('Found price in script tag');
         }
       }
     }
+
+    console.log('Final product info:', { name, price }); // Log final product info
 
     return {
       name,
@@ -76,6 +89,14 @@ async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProd
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add CORS middleware
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+  });
+
   // API Routes for receipts
   
   // Get all receipts
@@ -166,6 +187,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate PDF route
+  app.post("/api/generate-pdf", (req, res) => {
+    // In a production environment, this would use a PDF generation library
+    // and return a PDF buffer or URL, but we're handling this client-side
+    // with html2canvas and jsPDF for this implementation
+    res.json({ message: "PDF generation handled client-side" });
+  });
+
   // Fetch product info from AisleGopher
   app.post("/api/fetch-product", async (req, res) => {
     try {
@@ -177,22 +206,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log('Fetching product from URL:', url); // Log the URL being fetched
       const productInfo = await parseAisleGopherProductPage(url);
       res.json(productInfo);
     } catch (error) {
       console.error("Error fetching product info:", error);
       res.status(500).json({ 
-        message: "Failed to fetch product information. Please try again or add the item manually." 
+        message: error instanceof Error ? error.message : "Failed to fetch product information. Please try again or add the item manually." 
       });
     }
-  });
-
-  // Generate PDF route
-  app.post("/api/generate-pdf", (req, res) => {
-    // In a production environment, this would use a PDF generation library
-    // and return a PDF buffer or URL, but we're handling this client-side
-    // with html2canvas and jsPDF for this implementation
-    res.json({ message: "PDF generation handled client-side" });
   });
 
   // Create HTTP server

@@ -24,6 +24,10 @@ interface ReceiptFormProps {
   items: ReceiptItem[];
   setItems: React.Dispatch<React.SetStateAction<ReceiptItem[]>>;
   randomizeInfo: () => void;
+  productUrl: string;
+  setProductUrl: React.Dispatch<React.SetStateAction<string>>;
+  isLoadingProduct: boolean;
+  setIsLoadingProduct: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function ReceiptForm({
@@ -35,13 +39,15 @@ export default function ReceiptForm({
   setPaymentInfo,
   items,
   setItems,
-  randomizeInfo
+  randomizeInfo,
+  productUrl,
+  setProductUrl,
+  isLoadingProduct,
+  setIsLoadingProduct
 }: ReceiptFormProps) {
   const { toast } = useToast();
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [productUrl, setProductUrl] = useState('');
-  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   // Handle store info changes
   const handleStoreInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -318,13 +324,20 @@ export default function ReceiptForm({
 
     setIsLoadingProduct(true);
     try {
+      console.log('Fetching product from URL:', productUrl); // Debug log
       const response = await apiRequest(
         'POST',
         '/api/fetch-product',
         { url: productUrl }
       );
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch product');
+      }
+
       const productData = await response.json();
+      console.log('Received product data:', productData); // Debug log
 
       if (productData && productData.name && productData.price) {
         // Add the product as a new item
@@ -352,7 +365,7 @@ export default function ReceiptForm({
       console.error("Error fetching product:", error);
       toast({
         title: "Failed to Fetch Product",
-        description: "Unable to extract product information from the provided URL. Please try again or add the item manually.",
+        description: error instanceof Error ? error.message : "Unable to extract product information. Please try again or add the item manually.",
         variant: "destructive",
       });
     } finally {
@@ -545,125 +558,27 @@ export default function ReceiptForm({
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4 border-b pb-2">
             <h2 className="text-lg font-semibold">Items</h2>
-            <div className="flex space-x-2">
-              <Button
-                onClick={addItem}
-                variant="default"
-                className="bg-walmart-blue hover:bg-blue-600"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-4 w-4 mr-1" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M12 4v16m8-8H4" 
-                  />
-                </svg>
-                Add Item
-              </Button>
-              <Button
-                onClick={() => window.open('https://aislegopher.com', '_blank')}
-                variant="outline"
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-4 w-4 mr-1" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" 
-                  />
-                </svg>
-                Open AisleGopher
-              </Button>
-            </div>
-          </div>
-
-          {/* AisleGopher Product URL Input */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <Label htmlFor="product-url" className="text-sm font-medium flex items-center mb-2">
+            <Button
+              onClick={addItem}
+              variant="default"
+              className="bg-walmart-blue hover:bg-blue-600"
+            >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 20 20" 
-                fill="currentColor" 
-                className="w-4 h-4 mr-1 text-blue-500"
+                className="h-4 w-4 mr-1" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
               >
                 <path 
-                  fillRule="evenodd" 
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" 
-                  clipRule="evenodd" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 4v16m8-8H4" 
                 />
               </svg>
-              Add item from AisleGopher.com
-            </Label>
-            <div className="flex space-x-2">
-              <Input
-                id="product-url"
-                placeholder="Paste AisleGopher product URL (e.g., https://aislegopher.com/p/...)"
-                value={productUrl}
-                onChange={(e) => setProductUrl(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                onClick={fetchProductInfo} 
-                disabled={isLoadingProduct || !productUrl.includes('aislegopher.com')}
-                className="bg-walmart-blue hover:bg-blue-600 text-white"
-              >
-                {isLoadingProduct ? (
-                  <svg 
-                    className="animate-spin h-4 w-4 mr-1" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24"
-                  >
-                    <circle 
-                      className="opacity-25" 
-                      cx="12" 
-                      cy="12" 
-                      r="10" 
-                      stroke="currentColor" 
-                      strokeWidth="4"
-                    ></circle>
-                    <path 
-                      className="opacity-75" 
-                      fill="currentColor" 
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                ) : (
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 mr-1" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
-                    />
-                  </svg>
-                )}
-                {isLoadingProduct ? "Loading..." : "Fetch Product"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Paste a link to any AisleGopher product to automatically extract the name and price
-            </p>
+              Add Item
+            </Button>
           </div>
 
           {/* Target Total Feature */}
