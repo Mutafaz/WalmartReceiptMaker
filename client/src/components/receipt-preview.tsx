@@ -37,7 +37,7 @@ export default function ReceiptPreview({
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold mb-2 text-center">Receipt Preview</h2>
           
-          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-sm leading-tight">
+          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-sm leading-tight text-black">
             {/* Store Logo and Info */}
             <div className="text-center mb-4">
               {storeInfo.useCustomLogo && storeInfo.customLogo ? (
@@ -154,10 +154,10 @@ export default function ReceiptPreview({
                 <div className="font-bold">Customer Copy</div>
               </div>
               
-              <div className="border-t border-dashed border-gray-300 my-2"></div>
+              <div className="border-t border-dashed border-black my-2"></div>
               
               {/* Survey Information */}
-              <div className="text-[10px] leading-tight my-2">
+              <div className="text-[10px] leading-tight my-2 text-black">
                 <div className="font-bold">Tell us about your shopping experience!</div>
                 <div className="mt-1">Take a short survey for a chance to win</div>
                 <div>$1000 gift card</div>
@@ -186,7 +186,7 @@ export default function ReceiptPreview({
                 </svg>
               </div>
               
-              <div className="text-[10px] leading-tight mt-2">
+              <div className="text-[10px] leading-tight mt-2 text-black">
                 <div>Return policy: Most items can be returned within 90 days.</div>
                 <div>Exceptions may apply. See Walmart.com or store for details.</div>
                 <div className="mt-2 font-bold">Low Prices You Can Trust. Every Day.</div>
