@@ -37,38 +37,38 @@ export default function ReceiptPreview({
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold mb-2 text-center">Receipt Preview</h2>
           
-          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-[11px] leading-tight text-black">
+          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-[11px] leading-tight text-black font-bold">
             {/* Store Logo and Info */}
             <div className="text-center mb-3">
               {storeInfo.useCustomLogo && storeInfo.customLogo ? (
                 <img 
                   src={storeInfo.customLogo} 
                   alt="Custom logo" 
-                  className="h-12 mx-auto mb-2"
+                  className="h-16 mx-auto mb-2"
                 />
               ) : (
                 <div className="text-center">
                   <img 
                     src="/walmart-logo.png" 
                     alt="Walmart logo" 
-                    className="h-8 mx-auto mb-2"
+                    className="h-12 mx-auto mb-2"
                   />
-                  <div className="text-[10px] font-semibold mb-2 text-walmart-black">Save money. Live better.</div>
+                  <div className="text-[11px] font-bold mb-2 text-walmart-black">Save money. Live better.</div>
                 </div>
               )}
-              <div className="font-semibold uppercase">{storeInfo.address}</div>
-              <div className="font-semibold uppercase">{storeInfo.city}, {storeInfo.stateZip}</div>
-              <div className="font-semibold uppercase">STORE #{storeInfo.number} ({storeInfo.phone})</div>
-              <div className="font-semibold uppercase mt-0.5">STR MANAGER {storeInfo.manager}</div>
+              <div className="font-bold uppercase">{storeInfo.address}</div>
+              <div className="font-bold uppercase">{storeInfo.city}, {storeInfo.stateZip}</div>
+              <div className="font-bold uppercase">STORE #{storeInfo.number} ({storeInfo.phone})</div>
+              <div className="font-bold uppercase mt-0.5">STR MANAGER {storeInfo.manager}</div>
             </div>
             
             {/* Receipt Info */}
-            <div className="text-center mb-2 font-semibold">
+            <div className="text-center mb-2 font-bold">
               <div>SUPERCENTER</div>
             </div>
             
             {/* Date and Register Info */}
-            <div className="flex justify-between mb-3 font-semibold text-[10px]">
+            <div className="flex justify-between mb-3 font-bold text-[10px]">
               <div>
                 <div>OP# {receiptInfo.operator}</div>
                 <div>TE# {receiptInfo.terminal}</div>
@@ -83,14 +83,14 @@ export default function ReceiptPreview({
             {/* Items List */}
             <div className="border-t border-black pt-1 mb-3">
               {items.map((item) => (
-                <div key={item.id} className="flex justify-between mb-1 font-semibold">
+                <div key={item.id} className="flex justify-between mb-1 font-bold">
                   <div className="flex-1">
                     <div className="flex">
                       <span className="uppercase flex-1">{item.name || 'Item'}</span>
                       <span className="w-12 text-right">{(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</span>
                     </div>
                     {parseInt(item.quantity) > 1 && (
-                      <div className="text-[9px] pl-4">
+                      <div className="text-[9px] pl-4 font-bold">
                         {item.quantity} FOR ${(parseFloat(item.price)).toFixed(2)} EACH
                       </div>
                     )}
@@ -100,7 +100,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Totals with right alignment */}
-            <div className="border-t border-black pt-2 mb-3 font-semibold">
+            <div className="border-t border-black pt-2 mb-3 font-bold">
               <div className="flex justify-between">
                 <div className="text-left flex-1">SUBTOTAL</div>
                 <div className="text-right w-12">{subtotal.toFixed(2)}</div>
@@ -110,20 +110,20 @@ export default function ReceiptPreview({
                 <div className="text-right w-12">{taxAmount.toFixed(2)}</div>
               </div>
               <div className="flex justify-between">
-                <div className="text-left flex-1 font-bold">TOTAL</div>
-                <div className="text-right w-12 font-bold">{total.toFixed(2)}</div>
+                <div className="text-left flex-1 font-extrabold">TOTAL</div>
+                <div className="text-right w-12 font-extrabold">{total.toFixed(2)}</div>
               </div>
             </div>
             
             {/* Payment Method */}
-            <div className="mb-3 font-semibold">
+            <div className="mb-3 font-bold">
               <div className="flex justify-between">
                 <div className="text-left flex-1">{paymentInfo.method} TEND</div>
                 <div className="text-right w-12">{total.toFixed(2)}</div>
               </div>
               
               {paymentInfo.method !== "CASH" && (
-                <div className="text-[10px]">
+                <div className="text-[10px] font-bold">
                   <div className="flex justify-between">
                     <div className="text-left flex-1">ACCOUNT #</div>
                     <div className="text-right">XXXXXXXXXXXX{paymentInfo.cardLastFour}</div>
@@ -168,7 +168,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Item count and transaction code */}
-            <div className="font-semibold text-center text-[10px] border-t border-black pt-2 mb-1">
+            <div className="font-bold text-center text-[10px] border-t border-black pt-2 mb-1">
               <div># ITEMS SOLD {items.length}</div>
               <div className="text-center">
                 <div>TC# {transactionNumber}</div>
@@ -177,10 +177,10 @@ export default function ReceiptPreview({
             
             {/* Survey Section */}
             <div className="text-center border-t border-b border-black py-2 my-2">
-              <div className="text-[10px] leading-tight">
-                <div className="font-bold">WE VALUE YOUR OPINION!</div>
+              <div className="text-[10px] leading-tight font-bold">
+                <div className="font-extrabold">WE VALUE YOUR OPINION!</div>
                 <div className="mt-1">Please give us your feedback at</div>
-                <div className="font-bold">www.survey.walmart.com</div>
+                <div className="font-extrabold">www.survey.walmart.com</div>
                 <div>or call 1-800-925-6278</div>
                 <div className="mt-1">for a chance to win a $1000 WALMART SHOPPING CARD</div>
                 <div className="mt-1">Enter: {storeInfo.surveyCode}</div>
@@ -188,8 +188,8 @@ export default function ReceiptPreview({
             </div>
             
             {/* Receipt rules */}
-            <div className="text-[9px] text-center mb-2 font-semibold">
-              <div className="font-bold">YOUR RECEIPT FEATURES WALMART PAY</div>
+            <div className="text-[9px] text-center mb-2 font-bold">
+              <div className="font-extrabold">YOUR RECEIPT FEATURES WALMART PAY</div>
               <div className="mt-1">See store for Rx price match details.</div>
               <div className="mt-1 leading-tight">
                 RETURNS MUST BE MADE WITHIN 90 DAYS. SOME ITEMS CANNOT BE RETURNED.
@@ -204,7 +204,7 @@ export default function ReceiptPreview({
               <svg
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 100 30"
-                className="h-6 mx-auto"
+                className="h-7 mx-auto"
               >
                 <g fill="#000000">
                   {Array.from({ length: 30 }).map((_, i) => (
@@ -221,11 +221,11 @@ export default function ReceiptPreview({
             </div>
             
             {/* Footer */}
-            <div className="text-center text-[10px] border-t border-black pt-2 font-semibold">
+            <div className="text-center text-[10px] border-t border-black pt-2 font-bold">
               <div className="mb-1">{formattedDate}</div>
               <div className="mb-1">CSM# {receiptInfo.cashier}</div>
               <div className="uppercase mb-1">thank you for shopping at walmart</div>
-              <div className="font-bold text-walmart-blue">Save Money. Live Better.</div>
+              <div className="font-extrabold text-walmart-blue">Save Money. Live Better.</div>
             </div>
           </div>
         </CardContent>
