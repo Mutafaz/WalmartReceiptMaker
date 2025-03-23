@@ -307,10 +307,10 @@ export default function ReceiptForm({
 
   // Fetch product info from AisleGopher URL
   const fetchProductInfo = async () => {
-    if (!productUrl.trim() || !productUrl.includes('aislegopher.com')) {
+    if (!productUrl.trim() || !productUrl.includes('walmart.com')) {
       toast({
         title: "Invalid URL",
-        description: "Please enter a valid AisleGopher product URL",
+        description: "Please enter a valid Walmart product URL (e.g., https://www.walmart.com/ip/...)",
         variant: "destructive",
       });
       return;
@@ -616,7 +616,7 @@ export default function ReceiptForm({
               </Button>
               <Button
                 onClick={fetchProductInfo} 
-                disabled={isLoadingProduct || !productUrl.includes('aislegopher.com')}
+                disabled={isLoadingProduct || !productUrl.includes('walmart.com')}
                 className="bg-walmart-blue hover:bg-blue-600 text-white"
               >
                 {isLoadingProduct ? (
