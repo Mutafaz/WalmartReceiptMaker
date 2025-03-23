@@ -8,17 +8,15 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": ["client/src/*"],
       "@shared/*": ["shared/*"]
-    },
-    "outDir": "dist",
-    "rootDir": ".",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true
+    }
   },
   "include": ["client/src/**/*", "server/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist"]
