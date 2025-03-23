@@ -41,21 +41,19 @@ export default function ReceiptPreview({
             {/* Store Logo and Info */}
             <div className="text-center mb-3">
               {storeInfo.useCustomLogo && storeInfo.customLogo ? (
-                <div className="flex justify-center items-center mb-2">
-                  <img 
-                    src={storeInfo.customLogo} 
-                    alt="Custom logo" 
-                    className="h-20 w-auto object-contain"
-                  />
-                </div>
+                <img 
+                  src={storeInfo.customLogo} 
+                  alt="Custom logo" 
+                  className="h-20 mx-auto mb-2"
+                />
               ) : (
-                <div className="flex flex-col items-center justify-center mb-2">
+                <div className="text-center">
                   <img 
                     src="/walmart-logo.png" 
                     alt="Walmart logo" 
-                    className="h-16 w-auto object-contain"
+                    className="h-16 mx-auto mb-2"
                   />
-                  <div className="text-[11px] font-extrabold mt-1 text-walmart-black" style={{textShadow: '0 0 0.5px black'}}>Save money. Live better.</div>
+                  <div className="text-[11px] font-extrabold mb-2 text-walmart-black" style={{textShadow: '0 0 0.5px black'}}>Save money. Live better.</div>
                 </div>
               )}
               <div className="font-extrabold uppercase" style={{textShadow: '0 0 0.5px black'}}>{storeInfo.address}</div>
