@@ -70,10 +70,11 @@ export default function Home() {
     const location = generateRandomLocation();
     setStoreInfo(prev => ({
       ...prev,
-      number: generateRandomStoreNumber(),
+      number: location.storeNumber,
+      address: location.address,
       city: location.city,
       stateZip: location.stateZip,
-      phone: generateRandomPhone(),
+      phone: location.phone,
       manager: generateRandomManager(),
       surveyCode: generateRandomSurveyCode()
     }));
