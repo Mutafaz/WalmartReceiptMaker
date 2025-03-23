@@ -185,7 +185,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       /item-price[^>]*>([0-9]+\.[0-9]{2})</,   // Item price class
       /<span[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Price in span with price class
       /<div[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price in div with price class
-      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</      // Price in p with price class
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,     // Price in p with price class
+      /<div[^>]*class="[^"]*current-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Current price in div
+      /<span[^>]*class="[^"]*current-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Current price in span
+      /<div[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Product price in div
+      /<span[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</  // Product price in span
     ];
     
     for (const pattern of pricePatterns) {
@@ -209,6 +213,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
       if (scriptPriceMatch && scriptPriceMatch[1]) {
         price = scriptPriceMatch[1];
+      }
+    }
+    
+    // If still no price found, try to find it in the URL
+    if (!price) {
+      const urlPriceMatch = url.match(/\$([0-9]+\.[0-9]{2})/);
+      if (urlPriceMatch && urlPriceMatch[1]) {
+        price = urlPriceMatch[1];
       }
     }
     
