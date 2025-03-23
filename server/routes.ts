@@ -116,14 +116,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
       
-      // Use the HTML parsing approach
-      return await parseAisleGopherProductPage(url);
+      // Extract product ID from URL
+      const productIdMatch = url.match(/\/(\d+)$/);
+      if (!productIdMatch) {
+        throw new Error('Could not extract product ID from URL');
+      }
+      
+      const productId = productIdMatch[1];
+      console.log(`Extracted product ID: ${productId}`);
+      
+      // Use AisleGopher's API endpoint
+      const apiUrl = `https://aislegopher.com/api/products/${productId}`;
+      console.log(`Fetching from API: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Origin': 'https://aislegopher.com',
+          'Referer': 'https://aislegopher.com/'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch from API: ${response.status}`);
+        throw new Error(`Failed to fetch from API: ${response.status}`);
+      }
+      
+      const data = await response.json() as AisleGopherProduct;
+      console.log('Received API response:', data);
+      
+      return {
+        name: data.name,
+        price: data.price.toString()
+      };
     } catch (error) {
       console.error('Error fetching AisleGopher product:', error);
-      return {
-        name: 'Error Fetching Product',
-        price: '0.00'
-      };
+      // Fallback to HTML parsing if API fails
+      return await parseAisleGopherProductPage(url);
     }
   }
   
