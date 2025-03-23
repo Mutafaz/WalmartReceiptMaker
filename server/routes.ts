@@ -6,6 +6,12 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import fetch from "node-fetch";
 
+// Add interface for AisleGopher API response
+interface AisleGopherProduct {
+  name: string;
+  price: number;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
   
@@ -137,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error(`Failed to fetch product from API: ${response.status}`);
       }
       
-      const productData = await response.json();
+      const productData = await response.json() as AisleGopherProduct;
       
       if (!productData || !productData.name || !productData.price) {
         throw new Error('Invalid product data received from API');
