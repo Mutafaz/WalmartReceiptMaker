@@ -159,7 +159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     if (titleMatch && titleMatch[1]) {
       name = titleMatch[1]
-        .replace(/ - AisleGopher.*$/, '')  // Remove trailing AisleGopher.com
+        .replace(/ - AisleGopher.*$/, '')      // Remove trailing AisleGopher.com
+        .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
         .replace(/&#39;/g, "'")           // Replace HTML entities
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
@@ -172,6 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (h1Match && h1Match[1]) {
         name = h1Match[1]
           .replace(/<[^>]+>/g, '')       // Remove any HTML tags
+          .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
           .replace(/&#39;/g, "'")        // Replace HTML entities
           .replace(/&amp;/g, "&")
           .replace(/&quot;/g, '"')
@@ -206,6 +208,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
           .join(' ');             // Join back with spaces
       }
+    }
+    
+    // Clean up any "..." at the end of the product name
+    if (name) {
+      name = name.replace(/\.{3,}$/, '').trim();
     }
     
     console.log(`Extracted from AisleGopher - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
