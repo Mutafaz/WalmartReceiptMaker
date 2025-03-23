@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { StoreInfo, ReceiptInfo, PaymentInfo, ReceiptItem } from "@/pages/home";
@@ -100,17 +101,30 @@ export default function ReceiptForm({
       city: "BENTONVILLE",
       stateZip: "AR 72712",
       phone: "(479) 555-1234",
+      manager: "SHERRIE BLACK",
+      surveyCode: "7N5P0L1SL09X",
+      useCustomLogo: false,
+      customLogo: null
     });
 
     setReceiptInfo({
       date: new Date().toISOString().slice(0, 16),
       cashier: "JOHN",
       register: "12",
+      terminal: "SC011053",
+      operator: "00482"
     });
 
     setPaymentInfo({
-      taxRate: "6.5",
-      method: "CREDIT",
+      taxRate: "6.625",
+      method: "DEBIT",
+      cardLastFour: "1924",
+      change: "0.00",
+      approvalCode: "001920",
+      referenceNumber: "117700287029",
+      networkId: "0056",
+      aid: "A0000000093840",
+      arc: "R483019039445"
     });
 
     setItems([
@@ -252,8 +266,105 @@ export default function ReceiptForm({
     }
   };
 
+  // File upload reference for logo
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Handle logo file upload
+  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setStoreInfo(prev => ({
+          ...prev,
+          customLogo: reader.result as string
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  // Toggle custom logo usage
+  const toggleCustomLogo = (checked: boolean) => {
+    setStoreInfo(prev => ({
+      ...prev,
+      useCustomLogo: checked
+    }));
+    
+    // If toggling on and no logo is selected, open file picker
+    if (checked && !storeInfo.customLogo && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
   return (
     <div className="lg:col-span-3 space-y-6">
+      {/* Logo Customization */}
+      <Card>
+        <CardContent className="pt-6">
+          <h2 className="text-lg font-semibold mb-4 border-b pb-2">Logo Settings</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="custom-logo">Use Custom Logo</Label>
+                <p className="text-sm text-muted-foreground">
+                  Replace the default Walmart logo with your own
+                </p>
+              </div>
+              <Switch
+                id="custom-logo"
+                checked={storeInfo.useCustomLogo}
+                onCheckedChange={toggleCustomLogo}
+              />
+            </div>
+            
+            {storeInfo.useCustomLogo && (
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  style={{ display: 'none' }}
+                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1"
+                  >
+                    {storeInfo.customLogo ? 'Change Image' : 'Upload Image'}
+                  </Button>
+                  
+                  {storeInfo.customLogo && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setStoreInfo(prev => ({ ...prev, customLogo: null }))}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Remove Image
+                    </Button>
+                  )}
+                </div>
+                
+                {storeInfo.customLogo && (
+                  <div className="mt-2 border rounded-md p-2 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Preview:</p>
+                    <img 
+                      src={storeInfo.customLogo} 
+                      alt="Custom logo" 
+                      className="max-h-16 max-w-full mx-auto"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
       {/* Store Information */}
       <Card>
         <CardContent className="pt-6">

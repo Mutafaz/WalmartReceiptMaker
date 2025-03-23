@@ -5,21 +5,34 @@ import HelpModal from "@/components/help-modal";
 
 export type StoreInfo = {
   number: string;
+  phone: string;
+  manager: string;
   address: string;
   city: string;
   stateZip: string;
-  phone: string;
+  surveyCode: string;
+  useCustomLogo: boolean;
+  customLogo: string | null;
 };
 
 export type ReceiptInfo = {
   date: string;
   cashier: string;
   register: string;
+  terminal: string;
+  operator: string;
 };
 
 export type PaymentInfo = {
   taxRate: string;
   method: "CREDIT" | "DEBIT" | "CASH" | "GIFT CARD";
+  cardLastFour: string;
+  change: string;
+  approvalCode: string;
+  referenceNumber: string;
+  networkId: string;
+  aid: string;
+  arc: string;
 };
 
 export type ReceiptItem = {
@@ -37,17 +50,30 @@ export default function Home() {
     city: "BENTONVILLE",
     stateZip: "AR 72712",
     phone: "(479) 555-1234",
+    manager: "SHERRIE BLACK",
+    surveyCode: "7N5P0L1SL09X",
+    useCustomLogo: false,
+    customLogo: null
   });
 
   const [receiptInfo, setReceiptInfo] = useState<ReceiptInfo>({
     date: new Date().toISOString().slice(0, 16),
     cashier: "JOHN",
     register: "12",
+    terminal: "SC011053",
+    operator: "00482"
   });
 
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
-    taxRate: "6.5",
-    method: "CREDIT",
+    taxRate: "6.625",
+    method: "DEBIT",
+    cardLastFour: "1924",
+    change: "0.00",
+    approvalCode: "001920",
+    referenceNumber: "117700287029",
+    networkId: "0056",
+    aid: "A0000000093840",
+    arc: "R483019039445"
   });
 
   const [items, setItems] = useState<ReceiptItem[]>([
