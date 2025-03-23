@@ -4,9 +4,21 @@ import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import fetch from "node-fetch";
+import fetch, { RequestInit } from "node-fetch";
+import cors from "cors";
+import express from "express";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: express.Application): Promise<Server> {
+  // Enable CORS for all routes
+  app.use(cors({
+    origin: process.env.NODE_ENV === "production" 
+      ? ["https://walmart-receipt-maker.vercel.app", "https://walmartreceiptmaker.com"]
+      : "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  }));
+
   // API Routes for receipts
   
   // Get all receipts
@@ -137,38 +149,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Helper function to parse AisleGopher product page
   async function parseAisleGopherProductPage(url: string): Promise<{name: string, price: string}> {
-    console.log('Parsing AisleGopher product page:', url);
-    
+    console.log("Parsing AisleGopher product page:", url);
     try {
-      const response = await fetch(url, {
-        method: 'GET',
+      const fetchOptions: RequestInit = {
+        method: "GET",
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
-          'Sec-Fetch-User': '?1',
-          'DNT': '1',
-          'Origin': 'https://aislegopher.com',
-          'Referer': 'https://aislegopher.com/'
-        },
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Connection": "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Sec-Fetch-User": "?1",
+          "DNT": "1",
+          "Origin": "https://aislegopher.com",
+          "Referer": "https://aislegopher.com/"
+        }
+      };
+
+      const response = await fetch(url, fetchOptions);
+
       if (!response.ok) {
         console.error(`Failed to fetch AisleGopher product page: ${response.status} ${response.statusText}`);
         throw new Error(`Failed to fetch AisleGopher product page: ${response.status}`);
       }
-      
+
       const html = await response.text();
-      console.log('Received HTML length:', html.length);
+      console.log("Received HTML length:", html.length);
       
       // Extract product name - try multiple methods
       let name = null;
@@ -313,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: price || '0.00'
       };
     } catch (error) {
-      console.error('Error parsing AisleGopher product page:', error);
+      console.error("Error parsing AisleGopher product page:", error);
       throw error;
     }
   }
