@@ -318,20 +318,22 @@ export default function ReceiptForm({
 
     setIsLoadingProduct(true);
     try {
-      const response = await apiRequest({
-        url: '/api/fetch-walmart-product',
-        method: 'POST',
-        data: { url: walmartUrl }
-      });
+      const response = await apiRequest(
+        'POST',
+        '/api/fetch-walmart-product',
+        { url: walmartUrl }
+      );
+      
+      const productData = await response.json();
 
-      if (response.name && response.price) {
+      if (productData && productData.name && productData.price) {
         // Add the product as a new item
         setItems(prev => [
           ...prev,
           { 
             id: nanoid(), 
-            name: response.name, 
-            price: response.price, 
+            name: productData.name, 
+            price: productData.price, 
             quantity: "1" 
           }
         ]);
@@ -341,7 +343,7 @@ export default function ReceiptForm({
 
         toast({
           title: "Product Added",
-          description: `Successfully added "${response.name}" to your receipt.`,
+          description: `Successfully added "${productData.name}" to your receipt.`,
         });
       } else {
         throw new Error("Invalid product data received");
@@ -638,6 +640,92 @@ export default function ReceiptForm({
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Paste a link to any Walmart product to automatically extract the name and price
+            </p>
+          </div>
+
+          {/* Target Total Feature */}
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <Label htmlFor="target-total" className="text-sm font-medium flex items-center mb-2">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 20 20" 
+                fill="currentColor" 
+                className="w-4 h-4 mr-1 text-green-600"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+              Fill Receipt to Target Total
+            </Label>
+            <div className="flex space-x-2">
+              <div className="relative rounded-md shadow-sm flex-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <Input
+                  id="target-total"
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  placeholder="Enter desired total amount"
+                  className="pl-7"
+                />
+              </div>
+              <Button 
+                onClick={() => {
+                  const input = document.getElementById('target-total') as HTMLInputElement;
+                  const targetTotal = parseFloat(input.value);
+                  
+                  if (isNaN(targetTotal) || targetTotal <= 0) {
+                    toast({
+                      title: "Invalid Amount",
+                      description: "Please enter a valid dollar amount greater than zero.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  // Use the fillReceiptToTotal function to add items
+                  const updatedItems = fillReceiptToTotal(
+                    targetTotal,
+                    items,
+                    paymentInfo.taxRate
+                  );
+                  
+                  setItems(updatedItems);
+                  
+                  toast({
+                    title: "Receipt Updated",
+                    description: `Added items to reach approximately $${targetTotal.toFixed(2)} total.`,
+                  });
+                  
+                  // Clear the input
+                  input.value = '';
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-4 w-4 mr-1" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" 
+                  />
+                </svg>
+                Fill to Total
+              </Button>
+            </div>
+            <p className="text-xs text-green-700 mt-1">
+              Automatically adds common grocery items to reach the specified total amount (within $5).
             </p>
           </div>
 
