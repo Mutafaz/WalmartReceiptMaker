@@ -413,7 +413,7 @@ export default function ReceiptForm({
                     <img 
                       src={storeInfo.customLogo} 
                       alt="Custom logo" 
-                      className="max-h-24 max-w-full mx-auto"
+                      className="max-h-60 max-w-full mx-auto"
                     />
                   </div>
                 )}
