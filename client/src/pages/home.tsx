@@ -2,6 +2,16 @@ import { useState } from "react";
 import ReceiptForm from "@/components/receipt-form";
 import ReceiptPreview from "@/components/receipt-preview";
 import HelpModal from "@/components/help-modal";
+import { 
+  generateRandomId, 
+  generateRandomPhone, 
+  generateRandomManager, 
+  generateRandomLocation, 
+  generateRandomSurveyCode, 
+  generateRandomStoreNumber, 
+  generateRandomRegister,
+  generateRandomDateTime
+} from "@/utils/random";
 
 export type StoreInfo = {
   number: string;
@@ -42,8 +52,6 @@ export type ReceiptItem = {
   quantity: string;
 };
 
-import { generateRandomId, generateRandomPhone, generateRandomManager, generateRandomLocation, generateRandomSurveyCode, generateRandomStoreNumber } from "@/utils/random";
-
 export default function Home() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [storeInfo, setStoreInfo] = useState<StoreInfo>({
@@ -81,7 +89,9 @@ export default function Home() {
 
     setReceiptInfo(prev => ({
       ...prev,
+      date: generateRandomDateTime(),
       cashier: generateRandomManager().split(' ')[0],
+      register: generateRandomRegister(),
       terminal: `SC${generateRandomId(6)}`,
       operator: generateRandomId(5)
     }));

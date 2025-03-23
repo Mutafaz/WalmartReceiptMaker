@@ -42,3 +42,34 @@ export function generateRandomStoreNumber(): string {
   // For authentic store numbers, use getRandomWalmartLocation().storeNumber instead
   return Math.floor(Math.random() * 9000 + 1000).toString();
 }
+
+/**
+ * Generate a random register number between 1 and 40
+ */
+export function generateRandomRegister(): string {
+  return Math.floor(Math.random() * 40 + 1).toString();
+}
+
+/**
+ * Generate a random date and time within the past 14 days,
+ * with time between 6 AM and 11 PM
+ */
+export function generateRandomDateTime(): string {
+  // Get current date
+  const now = new Date();
+  
+  // Generate a random day within the past 14 days
+  const daysAgo = Math.floor(Math.random() * 14);
+  const randomDate = new Date(now);
+  randomDate.setDate(now.getDate() - daysAgo);
+  
+  // Set a random hour between 6 AM and 11 PM (6 to 23)
+  const randomHour = Math.floor(Math.random() * 18) + 6; // 18 possible hours (6AM to 11PM)
+  randomDate.setHours(randomHour);
+  
+  // Set random minutes
+  randomDate.setMinutes(Math.floor(Math.random() * 60));
+  
+  // Format as YYYY-MM-DDThh:mm (compatible with datetime-local input)
+  return randomDate.toISOString().slice(0, 16);
+}
