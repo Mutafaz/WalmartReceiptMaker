@@ -12,6 +12,12 @@ interface AisleGopherProduct {
   price: number;
 }
 
+// Add interface for PriceTracker API response
+interface PriceTrackerProduct {
+  name: string;
+  price: number;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
   
@@ -327,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error(`Failed to fetch product from API: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as PriceTrackerProduct;
       console.log('Received API response:', data);
       
       if (!data || typeof data.name !== 'string' || typeof data.price !== 'number') {
