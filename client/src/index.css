@@ -15,9 +15,12 @@
     @apply bg-white;
     background-image: linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
     background-size: 100% 2px;
+    letter-spacing: -0.2px;
   }
   
   .font-receipt {
-    font-family: "Courier New", monospace;
+    font-family: "OCR A Extended", "OCR-A", "Courier New", monospace;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
