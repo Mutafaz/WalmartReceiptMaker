@@ -1,25 +1,22 @@
-import { insertUserSchema, insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
-import type { z } from "zod";
-
-type User = z.infer<typeof insertUserSchema> & { id: number };
-type Receipt = z.infer<typeof insertReceiptSchema> & { id: number };
-type ReceiptItem = z.infer<typeof insertReceiptItemSchema> & { id: number };
+import { users, type User, type InsertUser, 
+         receipts, type Receipt, type InsertReceipt,
+         receiptItems, type ReceiptItem, type InsertReceiptItem } from "@shared/schema";
 
 // Interface for storage operations
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: z.infer<typeof insertUserSchema>): Promise<User>;
+  createUser(user: InsertUser): Promise<User>;
   
   // Receipt operations
   getAllReceipts(): Promise<Receipt[]>;
   getReceiptById(id: number): Promise<Receipt | undefined>;
-  createReceipt(receipt: z.infer<typeof insertReceiptSchema>): Promise<Receipt>;
+  createReceipt(receipt: InsertReceipt): Promise<Receipt>;
   
   // Receipt item operations
   getReceiptItems(receiptId: number): Promise<ReceiptItem[]>;
-  createReceiptItem(item: z.infer<typeof insertReceiptItemSchema>): Promise<ReceiptItem>;
+  createReceiptItem(item: InsertReceiptItem): Promise<ReceiptItem>;
 }
 
 // In-memory storage implementation
@@ -49,13 +46,13 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username
+      (user) => user.username === username,
     );
   }
 
-  async createUser(insertUser: z.infer<typeof insertUserSchema>): Promise<User> {
+  async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user = { ...insertUser, id };
+    const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
   }
@@ -69,23 +66,22 @@ export class MemStorage implements IStorage {
     return this.receipts.get(id);
   }
   
-  async createReceipt(insertReceipt: z.infer<typeof insertReceiptSchema>): Promise<Receipt> {
+  async createReceipt(insertReceipt: InsertReceipt): Promise<Receipt> {
     const id = this.receiptId++;
-    const receipt = { ...insertReceipt, id };
+    const receipt: Receipt = { ...insertReceipt, id };
     this.receipts.set(id, receipt);
     return receipt;
   }
   
   // Receipt item methods
   async getReceiptItems(receiptId: number): Promise<ReceiptItem[]> {
-    return Array.from(this.receiptItems.values()).filter(
-      (item) => item.receiptId === receiptId
-    );
+    return Array.from(this.receiptItems.values())
+      .filter(item => item.receiptId === receiptId);
   }
   
-  async createReceiptItem(insertItem: z.infer<typeof insertReceiptItemSchema>): Promise<ReceiptItem> {
+  async createReceiptItem(insertItem: InsertReceiptItem): Promise<ReceiptItem> {
     const id = this.itemId++;
-    const item = { ...insertItem, id };
+    const item: ReceiptItem = { ...insertItem, id };
     this.receiptItems.set(id, item);
     return item;
   }

@@ -1,20 +1,10 @@
-import { Express } from "express";
-import { createServer, Server } from "http";
+import type { Express } from "express";
+import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import fetch, { RequestInit, Response } from "node-fetch";
-
-interface AisleGopherProduct {
-  name: string;
-  price: string;
-}
-
-interface AisleGopherError {
-  error: string;
-  message: string;
-}
+import fetch from "node-fetch";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
@@ -50,8 +40,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new receipt
   app.post("/api/receipts", async (req, res) => {
     try {
+      // Validate receipt data
       const receiptData = insertReceiptSchema.parse(req.body);
+      
+      // Create receipt
       const receipt = await storage.createReceipt(receiptData);
+      
       res.status(201).json(receipt);
     } catch (error) {
       console.error("Error creating receipt:", error);
@@ -69,12 +63,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/receipts/:receiptId/items", async (req, res) => {
     try {
       const receiptId = parseInt(req.params.receiptId);
-      const receipt = await storage.getReceiptById(receiptId);
       
+      // Check if receipt exists
+      const receipt = await storage.getReceiptById(receiptId);
       if (!receipt) {
         return res.status(404).json({ message: "Receipt not found" });
       }
       
+      // Validate and create items
       const items = Array.isArray(req.body) ? req.body : [req.body];
       const createdItems = [];
       
@@ -103,14 +99,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Generate PDF route
   app.post("/api/generate-pdf", (req, res) => {
+    // In a production environment, this would use a PDF generation library
+    // and return a PDF buffer or URL, but we're handling this client-side
+    // with html2canvas and jsPDF for this implementation
     res.json({ message: "PDF generation handled client-side" });
   });
 
   // Function to fetch product information from AisleGopher URL
-  async function fetchAisleGopherProductInfo(url: string): Promise<AisleGopherProduct> {
+  async function fetchAisleGopherProductInfo(url: string): Promise<{name: string, price: string}> {
     try {
       console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
       
+      // Extract the product ID from the URL - AisleGopher URLs are in format:
+      // https://aislegopher.com/p/product-name/productId
       const productIdMatch = url.match(/\/p\/.*?\/(\d+)/);
       if (!productIdMatch) {
         console.error('Could not extract product ID from AisleGopher URL');
@@ -123,6 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productId = productIdMatch[1];
       console.log(`Extracted product ID: ${productId}`);
       
+      // Directly fetch the product page and parse it
       return await parseAisleGopherProductPage(url);
     } catch (error) {
       console.error('Error fetching AisleGopher product:', error);
@@ -134,185 +136,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Helper function to parse AisleGopher product page
-  async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
-    console.log("Parsing AisleGopher product page:", url);
-    try {
-      const fetchOptions: RequestInit = {
-        method: "GET",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.5",
-          "Connection": "keep-alive",
-          "Upgrade-Insecure-Requests": "1",
-          "Cache-Control": "no-cache",
-          "Pragma": "no-cache",
-          "Sec-Fetch-Dest": "document",
-          "Sec-Fetch-Mode": "navigate",
-          "Sec-Fetch-Site": "none",
-          "Sec-Fetch-User": "?1",
-          "DNT": "1",
-          "Origin": "https://aislegopher.com",
-          "Referer": "https://aislegopher.com/"
-        }
-      };
-
-      const response: Response = await fetch(url, fetchOptions);
-
-      if (!response.ok) {
-        console.error(`Failed to fetch AisleGopher product page: ${response.status} ${response.statusText}`);
-        throw new Error(`Failed to fetch AisleGopher product page: ${response.status}`);
+  async function parseAisleGopherProductPage(url: string): Promise<{name: string, price: string}> {
+    console.log('Parsing AisleGopher product page');
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
       }
-
-      const html = await response.text();
-      console.log("Received HTML length:", html.length);
-      
-      // Extract product name - try multiple methods
-      let name = null;
-      
-      // Method 1: Try to find JSON-LD data
-      const jsonLdMatch = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
-      if (jsonLdMatch) {
-        try {
-          const jsonLd = JSON.parse(jsonLdMatch[1]);
-          if (jsonLd.name) {
-            name = jsonLd.name;
-          }
-        } catch (e) {
-          console.log('Failed to parse JSON-LD:', e);
-        }
-      }
-      
-      // Method 2: Try to extract from title tag
-      if (!name) {
-        const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-        if (titleMatch && titleMatch[1]) {
-          name = titleMatch[1]
-            .replace(/ - AisleGopher.*$/, '')
-            .replace(/ \| Walmart Price Tracker.*$/, '')
-            .replace(/&#39;/g, "'")
-            .replace(/&amp;/g, "&")
-            .replace(/&quot;/g, '"')
-            .trim();
-        }
-      }
-      
-      // Method 3: Try to find h1 tag
-      if (!name) {
-        const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
-        if (h1Match && h1Match[1]) {
-          name = h1Match[1]
-            .replace(/<[^>]+>/g, '')
-            .replace(/ \| Walmart Price Tracker.*$/, '')
-            .replace(/&#39;/g, "'")
-            .replace(/&amp;/g, "&")
-            .replace(/&quot;/g, '"')
-            .trim();
-        }
-      }
-      
-      // Method 4: Try to find meta tags
-      if (!name) {
-        const metaMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"[^>]*>/i);
-        if (metaMatch && metaMatch[1]) {
-          name = metaMatch[1]
-            .replace(/ - AisleGopher.*$/, '')
-            .replace(/ \| Walmart Price Tracker.*$/, '')
-            .replace(/&#39;/g, "'")
-            .replace(/&amp;/g, "&")
-            .replace(/&quot;/g, '"')
-            .trim();
-        }
-      }
-      
-      // Extract price - try multiple methods
-      let price = null;
-      
-      // Method 1: Try to find JSON-LD price
-      if (jsonLdMatch) {
-        try {
-          const jsonLd = JSON.parse(jsonLdMatch[1]);
-          if (jsonLd.offers && jsonLd.offers.price) {
-            price = jsonLd.offers.price;
-          }
-        } catch (e) {
-          console.log('Failed to parse JSON-LD price:', e);
-        }
-      }
-      
-      // Method 2: Try to find price in meta tags
-      if (!price) {
-        const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([^"]*)"[^>]*>/i);
-        if (metaPriceMatch && metaPriceMatch[1]) {
-          price = metaPriceMatch[1];
-        }
-      }
-      
-      // Method 3: Try to find price in data attributes
-      if (!price) {
-        const dataPriceMatch = html.match(/data-price="([0-9]+\.[0-9]{2})"/i);
-        if (dataPriceMatch && dataPriceMatch[1]) {
-          price = dataPriceMatch[1];
-        }
-      }
-      
-      // Method 4: Try to find price in text content
-      if (!price) {
-        const pricePatterns = [
-          /\$([0-9]+\.[0-9]{2})/,
-          /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/,
-          /price">\$([0-9]+\.[0-9]{2})</,
-          /"price":\s*"?([0-9]+\.[0-9]{2})"?/
-        ];
-        
-        for (const pattern of pricePatterns) {
-          const match = html.match(pattern);
-          if (match && match[1]) {
-            price = match[1];
-            break;
-          }
-        }
-      }
-      
-      // For demonstration, if we can parse the URL, we can infer the product name from it
-      if (!name) {
-        const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
-        if (urlNameMatch && urlNameMatch[1]) {
-          name = urlNameMatch[1]
-            .replace(/-/g, ' ')
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-        }
-      }
-      
-      // Clean up any "..." at the end of the product name and optimize long product descriptions
-      if (name) {
-        name = name
-          .replace(/\.{3,}$/, '')
-          .replace(/, for All Skin Types/, '')
-          .replace(/, for All/, '')
-          .replace(/for All/, '')
-          .replace(/, for Men/, '')
-          .replace(/, for Women/, '')
-          .replace(/\s{2,}/g, ' ')
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch AisleGopher product page: ${response.status}`);
+    }
+    
+    const html = await response.text();
+    
+    // Extract product name - typically in the title or h1
+    let name = null;
+    
+    // Try to extract the product name from the title tag first
+    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+    if (titleMatch && titleMatch[1]) {
+      name = titleMatch[1]
+        .replace(/ - AisleGopher.*$/, '')      // Remove trailing AisleGopher.com
+        .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
+        .replace(/&#39;/g, "'")           // Replace HTML entities
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .trim();
+    }
+    
+    // If title extraction fails, try to extract from h1 or other key elements
+    if (!name) {
+      const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      if (h1Match && h1Match[1]) {
+        name = h1Match[1]
+          .replace(/<[^>]+>/g, '')       // Remove any HTML tags
+          .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
+          .replace(/&#39;/g, "'")        // Replace HTML entities
+          .replace(/&amp;/g, "&")
+          .replace(/&quot;/g, '"')
           .trim();
       }
+    }
+    
+    // Extract price - look for common price formats
+    let price = null;
+    const pricePatterns = [
+      /\$([0-9]+\.[0-9]{2})/,                 // Standard price format like $12.99
+      /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/, // JSON price format
+      /data-price="([0-9]+\.[0-9]{2})"/,      // data-price attribute
+      /price">\$([0-9]+\.[0-9]{2})</          // Price in specific element
+    ];
+    
+    for (const pattern of pricePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        price = match[1];
+        break;
+      }
+    }
+    
+    // For demonstration, if we can parse the URL, we can infer the product name from it
+    if (!name) {
+      const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
+      if (urlNameMatch && urlNameMatch[1]) {
+        name = urlNameMatch[1]
+          .replace(/-/g, ' ')     // Replace hyphens with spaces
+          .split(' ')             // Split into words
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
+          .join(' ');             // Join back with spaces
+      }
+    }
+    
+    // Clean up any "..." at the end of the product name and optimize long product descriptions
+    if (name) {
+      name = name
+        .replace(/\.{3,}$/, '')  // Remove ellipses at the end
+        .replace(/, for All Skin Types/, '')  // Remove "for All Skin Types"
+        .replace(/for All Skin Types/, '')    // Remove without comma
+        .replace(/, for All/, '')  // Remove "for All" with comma
+        .replace(/for All/, '')  // Remove "for All" without comma
+        .replace(/, for Men/, '')  // Remove "for Men"
+        .replace(/, for Women/, '')  // Remove "for Women"
+        .replace(/\s{2,}/g, ' ')  // Replace multiple spaces with a single space
+        .trim();
       
-      console.log('Extracted product info:', { name, price });
+      // Extract key size, count, and packaging information
+      const sizeCountMatch = name.match(/([\d\.]+)\s*(?:oz|ounce|fl oz|fluid ounce|lb|pound|g|gram|ml|count|ct|pk|pack)/i);
+      const countMatch = name.match(/[,\s](\d+)[\s-](?:count|ct|pk|pack|bar|bars|bottle|bottles|capsule|capsules|tablet|tablets)/i);
       
-      if (!name || !price) {
-        throw new Error('Could not extract product information');
+      // For bar soaps and similar products with scent information
+      // Format like: "Coast Refreshing Deodorant Bar Soap Classic Scent, 3.2 oz, 8 Bars"
+      const soapMatch = name.match(/^(.*?)\s*(?:,\s*|\s+)((?:Classic|Original|Fresh|Spring|Clean|Mountain|Ocean|[A-Za-z]+)\s+Scent)(.*)$/i);
+      if (soapMatch) {
+        // Extract size and count if present
+        let suffix = soapMatch[3];
+        if (sizeCountMatch || countMatch) {
+          const size = sizeCountMatch ? sizeCountMatch[0] : '';
+          const count = countMatch ? countMatch[0] : '';
+          
+          // Create a clean version with just product, scent, size and count
+          name = `${soapMatch[1]} ${soapMatch[2].trim()}`;
+          
+          // Add size and count if available
+          if (size) {
+            name += `, ${size.trim()}`;
+          }
+          if (count) {
+            name += `, ${count.trim().replace(/^[,\s]+/, '')}`;
+          }
+        } else {
+          name = `${soapMatch[1]} ${soapMatch[2].trim()}${suffix}`;
+        }
       }
       
-      return {
-        name: name || 'Product Name Not Found',
-        price: price || '0.00'
-      };
-    } catch (error) {
-      console.error("Error parsing AisleGopher product page:", error);
-      throw error;
+      // Final cleanup
+      name = name
+        .replace(/\s+,/g, ',') // Remove spaces before commas
+        .replace(/,+/g, ',')   // Remove duplicate commas
+        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with a single space
+        .trim();
     }
+    
+    console.log(`Extracted from AisleGopher - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
+    
+    return {
+      name: name || 'Product Name Not Found',
+      price: price || '0.00'
+    };
   }
 
   // Route to fetch product info from product URL
@@ -329,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      let productInfo: AisleGopherProduct;
+      let productInfo;
       
       // Check if it's an AisleGopher URL
       if (url.includes('aislegopher.com')) {
