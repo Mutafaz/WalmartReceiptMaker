@@ -426,13 +426,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let productInfo;
       
-      // Check if it's a Walmart URL
-      if (url.includes('walmart.com')) {
+      // Check if it's a Walmart URL or pricetracker.wtf URL
+      if (url.includes('walmart.com') || url.includes('pricetracker.wtf')) {
         productInfo = await fetchWalmartProductInfo(url);
       } else {
         return res.status(400).json({ 
           error: 'Unsupported URL',
-          message: 'Please provide a valid Walmart product URL (e.g., https://www.walmart.com/ip/...)' 
+          message: 'Please provide a valid Walmart product URL or pricetracker.wtf URL' 
         });
       }
       
