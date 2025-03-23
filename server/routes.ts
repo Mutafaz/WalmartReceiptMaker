@@ -139,10 +139,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     if (!response.ok) {
+      console.error(`Failed to fetch AisleGopher product page: ${response.status}`);
       throw new Error(`Failed to fetch AisleGopher product page: ${response.status}`);
     }
     
     const html = await response.text();
+    console.log('Successfully fetched HTML content');
     
     // Extract product name - typically in the title or h1
     let name = null;
@@ -150,6 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Try to extract the product name from the title tag first
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     if (titleMatch && titleMatch[1]) {
+      console.log('Found title tag:', titleMatch[1]);
       name = titleMatch[1]
         .replace(/ - AisleGopher.*$/, '')      // Remove trailing AisleGopher.com
         .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
@@ -157,12 +160,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
         .trim();
+      console.log('Extracted name from title:', name);
     }
     
     // If title extraction fails, try to extract from h1 or other key elements
     if (!name) {
       const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
       if (h1Match && h1Match[1]) {
+        console.log('Found h1 tag:', h1Match[1]);
         name = h1Match[1]
           .replace(/<[^>]+>/g, '')       // Remove any HTML tags
           .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
@@ -170,6 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/&amp;/g, "&")
           .replace(/&quot;/g, '"')
           .trim();
+        console.log('Extracted name from h1:', name);
       }
     }
     
@@ -195,6 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     for (const pattern of pricePatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
+        console.log('Found price with pattern:', pattern.toString());
         price = match[1];
         break;
       }
@@ -204,6 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!price) {
       const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([0-9]+\.[0-9]{2})"/);
       if (metaPriceMatch && metaPriceMatch[1]) {
+        console.log('Found price in meta tag:', metaPriceMatch[1]);
         price = metaPriceMatch[1];
       }
     }
@@ -212,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!price) {
       const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
       if (scriptPriceMatch && scriptPriceMatch[1]) {
+        console.log('Found price in script tag:', scriptPriceMatch[1]);
         price = scriptPriceMatch[1];
       }
     }
@@ -220,6 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!price) {
       const urlPriceMatch = url.match(/\$([0-9]+\.[0-9]{2})/);
       if (urlPriceMatch && urlPriceMatch[1]) {
+        console.log('Found price in URL:', urlPriceMatch[1]);
         price = urlPriceMatch[1];
       }
     }
@@ -228,65 +238,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!name) {
       const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
       if (urlNameMatch && urlNameMatch[1]) {
+        console.log('Extracting name from URL:', urlNameMatch[1]);
         name = urlNameMatch[1]
           .replace(/-/g, ' ')     // Replace hyphens with spaces
           .split(' ')             // Split into words
           .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
           .join(' ');             // Join back with spaces
+        console.log('Extracted name from URL:', name);
       }
     }
     
-    // Clean up any "..." at the end of the product name and optimize long product descriptions
-    if (name) {
-      name = name
-        .replace(/\.{3,}$/, '')  // Remove ellipses at the end
-        .replace(/, for All Skin Types/, '')  // Remove "for All Skin Types"
-        .replace(/for All Skin Types/, '')    // Remove without comma
-        .replace(/, for All/, '')  // Remove "for All" with comma
-        .replace(/for All/, '')  // Remove "for All" without comma
-        .replace(/, for Men/, '')  // Remove "for Men"
-        .replace(/, for Women/, '')  // Remove "for Women"
-        .replace(/\s{2,}/g, ' ')  // Replace multiple spaces with a single space
-        .trim();
-      
-      // Extract key size, count, and packaging information
-      const sizeCountMatch = name.match(/([\d\.]+)\s*(?:oz|ounce|fl oz|fluid ounce|lb|pound|g|gram|ml|count|ct|pk|pack)/i);
-      const countMatch = name.match(/[,\s](\d+)[\s-](?:count|ct|pk|pack|bar|bars|bottle|bottles|capsule|capsules|tablet|tablets)/i);
-      
-      // For bar soaps and similar products with scent information
-      // Format like: "Coast Refreshing Deodorant Bar Soap Classic Scent, 3.2 oz, 8 Bars"
-      const soapMatch = name.match(/^(.*?)\s*(?:,\s*|\s+)((?:Classic|Original|Fresh|Spring|Clean|Mountain|Ocean|[A-Za-z]+)\s+Scent)(.*)$/i);
-      if (soapMatch) {
-        // Extract size and count if present
-        let suffix = soapMatch[3];
-        if (sizeCountMatch || countMatch) {
-          const size = sizeCountMatch ? sizeCountMatch[0] : '';
-          const count = countMatch ? countMatch[0] : '';
-          
-          // Create a clean version with just product, scent, size and count
-          name = `${soapMatch[1]} ${soapMatch[2].trim()}`;
-          
-          // Add size and count if available
-          if (size) {
-            name += `, ${size.trim()}`;
-          }
-          if (count) {
-            name += `, ${count.trim().replace(/^[,\s]+/, '')}`;
-          }
-        } else {
-          name = `${soapMatch[1]} ${soapMatch[2].trim()}${suffix}`;
-        }
-      }
-      
-      // Final cleanup
-      name = name
-        .replace(/\s+,/g, ',') // Remove spaces before commas
-        .replace(/,+/g, ',')   // Remove duplicate commas
-        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with a single space
-        .trim();
-    }
-    
-    console.log(`Extracted from AisleGopher - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
+    console.log(`Final extracted values - Name: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
     
     return {
       name: name || 'Product Name Not Found',
