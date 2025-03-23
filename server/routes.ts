@@ -133,9 +133,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'no-cache'
+      },
+      redirect: 'follow'
     });
     
     if (!response.ok) {
@@ -195,7 +205,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       /<div[^>]*class="[^"]*current-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Current price in div
       /<span[^>]*class="[^"]*current-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Current price in span
       /<div[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Product price in div
-      /<span[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</  // Product price in span
+      /<span[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Product price in span
+      /<div[^>]*class="[^"]*price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,    // Price amount class
+      /<span[^>]*class="[^"]*price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price amount in span
+      /<div[^>]*class="[^"]*product-price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Product price amount
+      /<span[^>]*class="[^"]*product-price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</  // Product price amount in span
     ];
     
     for (const pattern of pricePatterns) {
