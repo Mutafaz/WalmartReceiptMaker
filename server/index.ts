@@ -36,9 +36,9 @@ app.use((req, res, next) => {
   let capturedJsonResponse: any;
 
   const originalResJson = res.json;
-  res.json = function(bodyJson: any, ...args: any[]) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+  res.json = function(body: any) {
+    capturedJsonResponse = body;
+    return originalResJson.call(res, body);
   };
 
   res.on('finish', () => {

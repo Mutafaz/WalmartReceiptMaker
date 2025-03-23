@@ -4,7 +4,17 @@ import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import fetch, { RequestInit } from "node-fetch";
+import fetch, { RequestInit, Response } from "node-fetch";
+
+interface AisleGopherProduct {
+  name: string;
+  price: string;
+}
+
+interface AisleGopherError {
+  error: string;
+  message: string;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
@@ -97,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Function to fetch product information from AisleGopher URL
-  async function fetchAisleGopherProductInfo(url: string): Promise<{name: string, price: string}> {
+  async function fetchAisleGopherProductInfo(url: string): Promise<AisleGopherProduct> {
     try {
       console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
       
@@ -124,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Helper function to parse AisleGopher product page
-  async function parseAisleGopherProductPage(url: string): Promise<{name: string, price: string}> {
+  async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
     console.log("Parsing AisleGopher product page:", url);
     try {
       const fetchOptions: RequestInit = {
@@ -147,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      const response = await fetch(url, fetchOptions);
+      const response: Response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         console.error(`Failed to fetch AisleGopher product page: ${response.status} ${response.statusText}`);
@@ -319,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      let productInfo;
+      let productInfo: AisleGopherProduct;
       
       // Check if it's an AisleGopher URL
       if (url.includes('aislegopher.com')) {

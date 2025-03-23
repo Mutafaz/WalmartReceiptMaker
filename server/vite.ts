@@ -2,7 +2,7 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer, createLogger } from "vite";
+import { createServer as createViteServer, createLogger, ServerOptions } from "vite";
 import { nanoid } from "nanoid";
 import viteConfig from "../vite.config";
 
@@ -22,10 +22,10 @@ function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: express.Application, server: any) {
-  const serverOptions = {
+  const serverOptions: ServerOptions = {
     middlewareMode: true,
     hmr: { server },
-    allowedHosts: true
+    allowedHosts: ['localhost', '127.0.0.1']
   };
 
   const vite = await createViteServer({
