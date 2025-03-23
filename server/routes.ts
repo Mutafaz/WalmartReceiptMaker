@@ -1,40 +1,67 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express from 'express';
+import { z } from 'zod';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
+const router = express.Router();
+
+// Product info type
 interface ProductInfo {
   name: string;
   price: string;
 }
 
-async function parseProductFromUrl(url: string): Promise<ProductInfo> {
+// Parse product name from URL
+function parseProductFromUrl(url: string): ProductInfo {
   try {
     // Extract product name from URL
-    const nameMatch = url.match(/\/p\/([^/]+)\/\d+$/);
-    if (!nameMatch) {
-      throw new Error("Could not extract product name from URL");
-    }
-    const name = nameMatch[1]
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+    const productName = lastPart
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
 
-    // Use a default price that can be modified later
-    const price = "0.00";
-
-    return { name, price };
+    return {
+      name: productName,
+      price: "0.00"
+    };
   } catch (error) {
-    console.error("Error parsing product from URL:", error);
-    throw error;
+    console.error("Error parsing product URL:", error);
+    throw new Error("Failed to parse product URL");
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+// Validate request body schema
+const fetchProductSchema = z.object({
+  url: z.string().url()
+});
+
+// Product fetching endpoint
+router.post('/fetch-product', async (req, res) => {
+  try {
+    // Validate request body
+    const { url } = fetchProductSchema.parse(req.body);
+
+    // Parse product info from URL
+    const productInfo = parseProductFromUrl(url);
+
+    // Return product info
+    res.json(productInfo);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Failed to fetch product information"
+    });
+  }
+});
+
+export async function registerRoutes(app: express.Express): Promise<Server> {
   // Add CORS middleware
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -44,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
   
   // Get all receipts
-  app.get("/api/receipts", async (req: Request, res: Response) => {
+  app.get("/api/receipts", async (req: express.Request, res: express.Response) => {
     try {
       const receipts = await storage.getAllReceipts();
       res.json(receipts);
@@ -55,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a receipt by ID
-  app.get("/api/receipts/:id", async (req: Request, res: Response) => {
+  app.get("/api/receipts/:id", async (req: express.Request, res: express.Response) => {
     try {
       const id = parseInt(req.params.id);
       const receipt = await storage.getReceiptById(id);
@@ -72,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new receipt
-  app.post("/api/receipts", async (req: Request, res: Response) => {
+  app.post("/api/receipts", async (req: express.Request, res: express.Response) => {
     try {
       // Validate receipt data
       const receiptData = insertReceiptSchema.parse(req.body);
@@ -94,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create receipt items for a receipt
-  app.post("/api/receipts/:receiptId/items", async (req: Request, res: Response) => {
+  app.post("/api/receipts/:receiptId/items", async (req: express.Request, res: express.Response) => {
     try {
       const receiptId = parseInt(req.params.receiptId);
       
@@ -132,43 +159,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate PDF route
-  app.post("/api/generate-pdf", (req: Request, res: Response) => {
+  app.post("/api/generate-pdf", (req: express.Request, res: express.Response) => {
     // In a production environment, this would use a PDF generation library
     // and return a PDF buffer or URL, but we're handling this client-side
     // with html2canvas and jsPDF for this implementation
     res.json({ message: "PDF generation handled client-side" });
-  });
-
-  // Parse product from URL
-  app.post("/api/fetch-product", async (req: Request, res: Response) => {
-    try {
-      let { url } = req.body;
-      
-      if (!url || typeof url !== 'string') {
-        return res.status(400).json({ 
-          message: "Please provide a product URL" 
-        });
-      }
-
-      // Remove @ symbol if present at the start of the URL
-      url = url.replace(/^@/, '');
-
-      try {
-        const productInfo = await parseProductFromUrl(url);
-        console.log('Successfully parsed product:', productInfo);
-        res.json(productInfo);
-      } catch (parseError) {
-        console.error('Error parsing product URL:', parseError);
-        return res.status(400).json({
-          message: "Could not extract product information from the URL. Please enter the item details manually."
-        });
-      }
-    } catch (error) {
-      console.error("Unexpected error in fetch-product endpoint:", error);
-      res.status(500).json({ 
-        message: "An unexpected error occurred. Please try again later." 
-      });
-    }
   });
 
   // Create HTTP server
@@ -176,4 +171,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   return httpServer;
 }
+
+export default router;
 

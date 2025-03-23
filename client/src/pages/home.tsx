@@ -2,24 +2,24 @@ import { useState } from "react";
 import ReceiptForm from "@/components/receipt-form";
 import ReceiptPreview from "@/components/receipt-preview";
 import HelpModal from "@/components/help-modal";
-import { 
-  generateRandomId, 
-  generateRandomPhone, 
-  generateRandomManager, 
-  generateRandomLocation, 
-  generateRandomSurveyCode, 
-  generateRandomStoreNumber, 
+import {
+  generateRandomId,
+  generateRandomStoreNumber,
+  generateRandomLocation,
+  generateRandomPhone,
+  generateRandomManager,
+  generateRandomSurveyCode,
   generateRandomRegister,
   generateRandomDateTime
 } from "@/utils/random";
 
 export type StoreInfo = {
   number: string;
-  phone: string;
-  manager: string;
   address: string;
   city: string;
   stateZip: string;
+  phone: string;
+  manager: string;
   surveyCode: string;
   useCustomLogo: boolean;
   customLogo: string | null;
@@ -74,38 +74,6 @@ export default function Home() {
     operator: "00482"
   });
 
-  const randomizeInfo = () => {
-    const location = generateRandomLocation();
-    setStoreInfo((prev: StoreInfo) => ({
-      ...prev,
-      number: location.storeNumber,
-      address: location.address,
-      city: location.city,
-      stateZip: location.stateZip,
-      phone: location.phone,
-      manager: generateRandomManager(),
-      surveyCode: generateRandomSurveyCode()
-    }));
-
-    setReceiptInfo((prev: ReceiptInfo) => ({
-      ...prev,
-      date: generateRandomDateTime(),
-      cashier: generateRandomManager().split(' ')[0],
-      register: generateRandomRegister(),
-      terminal: `SC${generateRandomId(6)}`,
-      operator: generateRandomId(5)
-    }));
-
-    setPaymentInfo((prev: PaymentInfo) => ({
-      ...prev,
-      approvalCode: generateRandomId(6),
-      referenceNumber: generateRandomId(12),
-      networkId: generateRandomId(4),
-      aid: `A${generateRandomId(15)}`,
-      arc: `R${generateRandomId(12)}`
-    }));
-  };
-
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
     taxRate: "6.625",
     method: "DEBIT",
@@ -122,8 +90,6 @@ export default function Home() {
     { id: "1", name: "Great Value Milk 1 Gallon", price: "3.48", quantity: "1" },
     { id: "2", name: "Bananas", price: "1.24", quantity: "1" },
   ]);
-  const [productUrl, setProductUrl] = useState("");
-  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   // Calculate formatted date for receipt display
   const formattedDate = (() => {
@@ -147,6 +113,39 @@ export default function Home() {
 
   const taxAmount = subtotal * (parseFloat(paymentInfo.taxRate) / 100);
   const total = subtotal + taxAmount;
+
+  const randomizeInfo = () => {
+    const location = generateRandomLocation();
+    setStoreInfo(prev => ({
+      ...prev,
+      number: generateRandomStoreNumber(),
+      address: location.address,
+      city: location.city,
+      stateZip: location.stateZip,
+      phone: generateRandomPhone(),
+      manager: generateRandomManager(),
+      surveyCode: generateRandomSurveyCode()
+    }));
+
+    setReceiptInfo(prev => ({
+      ...prev,
+      date: generateRandomDateTime(),
+      cashier: generateRandomManager().split(' ')[0],
+      register: generateRandomRegister(),
+      terminal: `SC${generateRandomId(6)}`,
+      operator: generateRandomId(5)
+    }));
+
+    setPaymentInfo(prev => ({
+      ...prev,
+      cardLastFour: generateRandomId(4),
+      approvalCode: generateRandomId(6),
+      referenceNumber: generateRandomId(12),
+      networkId: generateRandomId(4),
+      aid: `A${generateRandomId(15)}`,
+      arc: `R${generateRandomId(12)}`
+    }));
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -172,48 +171,26 @@ export default function Home() {
               Walmart Receipt Generator
             </h1>
           </div>
-          <div>
-            <button 
-              onClick={() => window.open('https://aislegopher.com', '_blank')}
-              className="bg-walmart-yellow text-walmart-dark px-3 py-1 rounded-md text-sm font-medium hover:bg-yellow-400 transition mr-2"
+          <button 
+            onClick={() => setHelpOpen(true)}
+            className="bg-walmart-yellow text-walmart-dark px-3 py-1 rounded-md text-sm font-medium hover:bg-yellow-400 transition"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4 inline mr-1" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-4 w-4 inline mr-1" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" 
-                />
-              </svg>
-              AisleGopher
-            </button>
-            <button 
-              onClick={() => setHelpOpen(true)}
-              className="bg-walmart-yellow text-walmart-dark px-3 py-1 rounded-md text-sm font-medium hover:bg-yellow-400 transition"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-4 w-4 inline mr-1" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-                />
-              </svg>
-              Help
-            </button>
-          </div>
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+              />
+            </svg>
+            Help
+          </button>
         </div>
       </header>
 
@@ -231,10 +208,6 @@ export default function Home() {
             items={items}
             setItems={setItems}
             randomizeInfo={randomizeInfo}
-            productUrl={productUrl}
-            setProductUrl={setProductUrl}
-            isLoadingProduct={isLoadingProduct}
-            setIsLoadingProduct={setIsLoadingProduct}
           />
 
           {/* Preview */}
