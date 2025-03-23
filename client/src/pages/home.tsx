@@ -84,6 +84,15 @@ export default function Home() {
       terminal: `SC${generateRandomId(6)}`,
       operator: generateRandomId(5)
     }));
+
+    setPaymentInfo(prev => ({
+      ...prev,
+      approvalCode: generateRandomId(6),
+      referenceNumber: generateRandomId(12),
+      networkId: generateRandomId(4),
+      aid: `A${generateRandomId(15)}`,
+      arc: `R${generateRandomId(12)}`
+    }));
   };
 
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
