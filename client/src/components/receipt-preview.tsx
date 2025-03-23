@@ -37,38 +37,38 @@ export default function ReceiptPreview({
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold mb-2 text-center">Receipt Preview</h2>
           
-          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-[11px] leading-tight text-black font-bold">
+          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-[11px] leading-tight text-black font-extrabold" style={{fontWeight: 900, textShadow: '0 0 0.5px black'}}>
             {/* Store Logo and Info */}
             <div className="text-center mb-3">
               {storeInfo.useCustomLogo && storeInfo.customLogo ? (
                 <img 
                   src={storeInfo.customLogo} 
                   alt="Custom logo" 
-                  className="h-16 mx-auto mb-2"
+                  className="h-20 mx-auto mb-2"
                 />
               ) : (
                 <div className="text-center">
                   <img 
                     src="/walmart-logo.png" 
                     alt="Walmart logo" 
-                    className="h-12 mx-auto mb-2"
+                    className="h-16 mx-auto mb-2"
                   />
-                  <div className="text-[11px] font-bold mb-2 text-walmart-black">Save money. Live better.</div>
+                  <div className="text-[11px] font-extrabold mb-2 text-walmart-black" style={{textShadow: '0 0 0.5px black'}}>Save money. Live better.</div>
                 </div>
               )}
-              <div className="font-bold uppercase">{storeInfo.address}</div>
-              <div className="font-bold uppercase">{storeInfo.city}, {storeInfo.stateZip}</div>
-              <div className="font-bold uppercase">STORE #{storeInfo.number} ({storeInfo.phone})</div>
-              <div className="font-bold uppercase mt-0.5">STR MANAGER {storeInfo.manager}</div>
+              <div className="font-extrabold uppercase" style={{textShadow: '0 0 0.5px black'}}>{storeInfo.address}</div>
+              <div className="font-extrabold uppercase" style={{textShadow: '0 0 0.5px black'}}>{storeInfo.city}, {storeInfo.stateZip}</div>
+              <div className="font-extrabold uppercase" style={{textShadow: '0 0 0.5px black'}}>STORE #{storeInfo.number} ({storeInfo.phone})</div>
+              <div className="font-extrabold uppercase mt-0.5" style={{textShadow: '0 0 0.5px black'}}>STR MANAGER {storeInfo.manager}</div>
             </div>
             
             {/* Receipt Info */}
-            <div className="text-center mb-2 font-bold">
+            <div className="text-center mb-2 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
               <div>SUPERCENTER</div>
             </div>
             
             {/* Date and Register Info */}
-            <div className="flex justify-between mb-3 font-bold text-[10px]">
+            <div className="flex justify-between mb-3 font-extrabold text-[10px]" style={{textShadow: '0 0 0.5px black'}}>
               <div>
                 <div>OP# {receiptInfo.operator}</div>
                 <div>TE# {receiptInfo.terminal}</div>
@@ -83,14 +83,14 @@ export default function ReceiptPreview({
             {/* Items List */}
             <div className="border-t border-black pt-1 mb-3">
               {items.map((item) => (
-                <div key={item.id} className="flex justify-between mb-1 font-bold">
+                <div key={item.id} className="flex justify-between mb-1 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
                   <div className="flex-1">
                     <div className="flex">
                       <span className="uppercase flex-1">{item.name || 'Item'}</span>
                       <span className="w-12 text-right">{(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</span>
                     </div>
                     {parseInt(item.quantity) > 1 && (
-                      <div className="text-[9px] pl-4 font-bold">
+                      <div className="text-[9px] pl-4 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
                         {item.quantity} FOR ${(parseFloat(item.price)).toFixed(2)} EACH
                       </div>
                     )}
@@ -100,7 +100,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Totals with right alignment */}
-            <div className="border-t border-black pt-2 mb-3 font-bold">
+            <div className="border-t border-black pt-2 mb-3 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
               <div className="flex justify-between">
                 <div className="text-left flex-1">SUBTOTAL</div>
                 <div className="text-right w-12">{subtotal.toFixed(2)}</div>
@@ -116,14 +116,14 @@ export default function ReceiptPreview({
             </div>
             
             {/* Payment Method */}
-            <div className="mb-3 font-bold">
+            <div className="mb-3 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
               <div className="flex justify-between">
                 <div className="text-left flex-1">{paymentInfo.method} TEND</div>
                 <div className="text-right w-12">{total.toFixed(2)}</div>
               </div>
               
               {paymentInfo.method !== "CASH" && (
-                <div className="text-[10px] font-bold">
+                <div className="text-[10px] font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
                   <div className="flex justify-between">
                     <div className="text-left flex-1">ACCOUNT #</div>
                     <div className="text-right">XXXXXXXXXXXX{paymentInfo.cardLastFour}</div>
@@ -168,7 +168,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Item count and transaction code */}
-            <div className="font-bold text-center text-[10px] border-t border-black pt-2 mb-1">
+            <div className="font-extrabold text-center text-[10px] border-t border-black pt-2 mb-1" style={{textShadow: '0 0 0.5px black'}}>
               <div># ITEMS SOLD {items.length}</div>
               <div className="text-center">
                 <div>TC# {transactionNumber}</div>
@@ -177,7 +177,7 @@ export default function ReceiptPreview({
             
             {/* Survey Section */}
             <div className="text-center border-t border-b border-black py-2 my-2">
-              <div className="text-[10px] leading-tight font-bold">
+              <div className="text-[10px] leading-tight font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
                 <div className="font-extrabold">WE VALUE YOUR OPINION!</div>
                 <div className="mt-1">Please give us your feedback at</div>
                 <div className="font-extrabold">www.survey.walmart.com</div>
@@ -188,7 +188,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Receipt rules */}
-            <div className="text-[9px] text-center mb-2 font-bold">
+            <div className="text-[9px] text-center mb-2 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
               <div className="font-extrabold">YOUR RECEIPT FEATURES WALMART PAY</div>
               <div className="mt-1">See store for Rx price match details.</div>
               <div className="mt-1 leading-tight">
@@ -221,7 +221,7 @@ export default function ReceiptPreview({
             </div>
             
             {/* Footer */}
-            <div className="text-center text-[10px] border-t border-black pt-2 font-bold">
+            <div className="text-center text-[10px] border-t border-black pt-2 font-extrabold" style={{textShadow: '0 0 0.5px black'}}>
               <div className="mb-1">{formattedDate}</div>
               <div className="mb-1">CSM# {receiptInfo.cashier}</div>
               <div className="uppercase mb-1">thank you for shopping at walmart</div>
