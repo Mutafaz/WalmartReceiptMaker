@@ -224,13 +224,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fetch product info from AisleGopher
   app.post("/api/fetch-product", async (req: Request, res: Response) => {
     try {
-      const { url } = req.body;
+      let { url } = req.body;
       
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ 
           message: "Please provide a product URL" 
         });
       }
+
+      // Remove @ symbol if present at the start of the URL
+      url = url.replace(/^@/, '');
 
       if (!url.includes('aislegopher.com')) {
         return res.status(400).json({ 
@@ -288,3 +291,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   return httpServer;
 }
+
