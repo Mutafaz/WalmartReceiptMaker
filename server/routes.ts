@@ -210,9 +210,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
-    // Clean up any "..." at the end of the product name
+    // Clean up any "..." at the end of the product name and optimize long product descriptions
     if (name) {
-      name = name.replace(/\.{3,}$/, '').trim();
+      name = name
+        .replace(/\.{3,}$/, '')  // Remove ellipses at the end
+        .replace(/, for All Skin Types/, '')  // Remove "for All Skin Types"
+        .replace(/for All Skin Types/, '')    // Remove without comma
+        .replace(/, for All/, '')  // Remove "for All" with comma
+        .replace(/for All/, '')  // Remove "for All" without comma
+        .replace(/, for Men/, '')  // Remove "for Men"
+        .replace(/, for Women/, '')  // Remove "for Women"
+        .replace(/\s{2,}/g, ' ')  // Replace multiple spaces with a single space
+        .trim();
+      
+      // Extract key size, count, and packaging information
+      const sizeCountMatch = name.match(/([\d\.]+)\s*(?:oz|ounce|fl oz|fluid ounce|lb|pound|g|gram|ml|count|ct|pk|pack)/i);
+      const countMatch = name.match(/[,\s](\d+)[\s-](?:count|ct|pk|pack|bar|bars|bottle|bottles|capsule|capsules|tablet|tablets)/i);
+      
+      // For bar soaps and similar products with scent information
+      // Format like: "Coast Refreshing Deodorant Bar Soap Classic Scent, 3.2 oz, 8 Bars"
+      const soapMatch = name.match(/^(.*?)\s*(?:,\s*|\s+)((?:Classic|Original|Fresh|Spring|Clean|Mountain|Ocean|[A-Za-z]+)\s+Scent)(.*)$/i);
+      if (soapMatch) {
+        // Extract size and count if present
+        let suffix = soapMatch[3];
+        if (sizeCountMatch || countMatch) {
+          const size = sizeCountMatch ? sizeCountMatch[0] : '';
+          const count = countMatch ? countMatch[0] : '';
+          
+          // Create a clean version with just product, scent, size and count
+          name = `${soapMatch[1]} ${soapMatch[2].trim()}`;
+          
+          // Add size and count if available
+          if (size) {
+            name += `, ${size.trim()}`;
+          }
+          if (count) {
+            name += `, ${count.trim().replace(/^[,\s]+/, '')}`;
+          }
+        } else {
+          name = `${soapMatch[1]} ${soapMatch[2].trim()}${suffix}`;
+        }
+      }
+      
+      // Final cleanup
+      name = name
+        .replace(/\s+,/g, ',') // Remove spaces before commas
+        .replace(/,+/g, ',')   // Remove duplicate commas
+        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with a single space
+        .trim();
     }
     
     console.log(`Extracted from AisleGopher - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
