@@ -114,33 +114,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Function to fetch product information from AisleGopher URL
   async function fetchAisleGopherProductInfo(url: string): Promise<{name: string, price: string}> {
     try {
-      console.log(`Processing AisleGopher URL: ${url}`);
+      console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
       
-      // Extract product name from URL
-      const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
-      if (!urlNameMatch || !urlNameMatch[1]) {
-        throw new Error('Could not extract product name from URL');
+      // Extract the product ID from the URL - AisleGopher URLs are in format:
+      // https://aislegopher.com/p/product-name/productId
+      const productIdMatch = url.match(/\/p\/.*?\/(\d+)/);
+      if (!productIdMatch) {
+        console.error('Could not extract product ID from AisleGopher URL');
+        return {
+          name: 'Error Extracting Product ID',
+          price: '0.00'
+        };
       }
       
-      // Format the product name
-      const name = urlNameMatch[1]
-        .replace(/-/g, ' ')     // Replace hyphens with spaces
-        .split(' ')             // Split into words
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
-        .join(' ');             // Join back with spaces
+      const productId = productIdMatch[1];
+      console.log(`Extracted product ID: ${productId}`);
       
-      console.log('Extracted name from URL:', name);
+      // Use AisleGopher's API to fetch product info
+      const apiUrl = `https://aislegopher.com/api/products/${productId}`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
       
-      // For now, we'll use a default price since we can't reliably get it from the URL
-      const price = '0.00';
+      if (!response.ok) {
+        throw new Error(`Failed to fetch product from API: ${response.status}`);
+      }
+      
+      const productData = (await response.json()) as AisleGopherProduct;
+      
+      if (!productData || typeof productData.name !== 'string' || typeof productData.price !== 'number') {
+        throw new Error('Invalid product data received from API');
+      }
       
       return {
-        name,
-        price
+        name: productData.name,
+        price: productData.price.toString()
       };
     } catch (error) {
-      console.error('Error processing AisleGopher URL:', error);
-      throw error;
+      console.error('Error fetching AisleGopher product:', error);
+      return {
+        name: 'Error Fetching Product',
+        price: '0.00'
+      };
     }
   }
   
@@ -150,28 +168,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Cache-Control': 'no-cache'
-      },
-      redirect: 'follow'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+      }
     });
     
     if (!response.ok) {
-      console.error(`Failed to fetch AisleGopher product page: ${response.status}`);
       throw new Error(`Failed to fetch AisleGopher product page: ${response.status}`);
     }
     
     const html = await response.text();
-    console.log('Successfully fetched HTML content');
     
     // Extract product name - typically in the title or h1
     let name = null;
@@ -179,7 +185,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Try to extract the product name from the title tag first
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     if (titleMatch && titleMatch[1]) {
-      console.log('Found title tag:', titleMatch[1]);
       name = titleMatch[1]
         .replace(/ - AisleGopher.*$/, '')      // Remove trailing AisleGopher.com
         .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
@@ -187,14 +192,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
         .trim();
-      console.log('Extracted name from title:', name);
     }
     
     // If title extraction fails, try to extract from h1 or other key elements
     if (!name) {
       const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
       if (h1Match && h1Match[1]) {
-        console.log('Found h1 tag:', h1Match[1]);
         name = h1Match[1]
           .replace(/<[^>]+>/g, '')       // Remove any HTML tags
           .replace(/ \| Walmart Price Tracker.*$/, '')  // Remove "| Walmart Price Tracker | aislegopher.com"
@@ -202,66 +205,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/&amp;/g, "&")
           .replace(/&quot;/g, '"')
           .trim();
-        console.log('Extracted name from h1:', name);
       }
     }
     
     // Extract price - look for common price formats
     let price = null;
     const pricePatterns = [
+      /\$([0-9]+\.[0-9]{2})/,                 // Standard price format like $12.99
       /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/, // JSON price format
       /data-price="([0-9]+\.[0-9]{2})"/,      // data-price attribute
-      /price">\$([0-9]+\.[0-9]{2})</,         // Price in specific element
-      /\$([0-9]+\.[0-9]{2})/,                 // Standard price format like $12.99
-      /current-price[^>]*>([0-9]+\.[0-9]{2})</, // Current price class
-      /product-price[^>]*>([0-9]+\.[0-9]{2})</, // Product price class
-      /item-price[^>]*>([0-9]+\.[0-9]{2})</,   // Item price class
-      /<span[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Price in span with price class
-      /<div[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price in div with price class
-      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,     // Price in p with price class
-      /<div[^>]*class="[^"]*current-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Current price in div
-      /<span[^>]*class="[^"]*current-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Current price in span
-      /<div[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Product price in div
-      /<span[^>]*class="[^"]*product-price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Product price in span
-      /<div[^>]*class="[^"]*price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,    // Price amount class
-      /<span[^>]*class="[^"]*price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price amount in span
-      /<div[^>]*class="[^"]*product-price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Product price amount
-      /<span[^>]*class="[^"]*product-price-amount[^"]*"[^>]*>([0-9]+\.[0-9]{2})</  // Product price amount in span
+      /price">\$([0-9]+\.[0-9]{2})</          // Price in specific element
     ];
     
     for (const pattern of pricePatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
-        console.log('Found price with pattern:', pattern.toString());
         price = match[1];
         break;
-      }
-    }
-    
-    // If no price found, try to find it in meta tags
-    if (!price) {
-      const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([0-9]+\.[0-9]{2})"/);
-      if (metaPriceMatch && metaPriceMatch[1]) {
-        console.log('Found price in meta tag:', metaPriceMatch[1]);
-        price = metaPriceMatch[1];
-      }
-    }
-    
-    // If still no price found, try to find it in script tags
-    if (!price) {
-      const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
-      if (scriptPriceMatch && scriptPriceMatch[1]) {
-        console.log('Found price in script tag:', scriptPriceMatch[1]);
-        price = scriptPriceMatch[1];
-      }
-    }
-    
-    // If still no price found, try to find it in the URL
-    if (!price) {
-      const urlPriceMatch = url.match(/\$([0-9]+\.[0-9]{2})/);
-      if (urlPriceMatch && urlPriceMatch[1]) {
-        console.log('Found price in URL:', urlPriceMatch[1]);
-        price = urlPriceMatch[1];
       }
     }
     
@@ -269,22 +229,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!name) {
       const urlNameMatch = url.match(/\/p\/(.*?)\/\d+/);
       if (urlNameMatch && urlNameMatch[1]) {
-        console.log('Extracting name from URL:', urlNameMatch[1]);
         name = urlNameMatch[1]
           .replace(/-/g, ' ')     // Replace hyphens with spaces
           .split(' ')             // Split into words
           .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
           .join(' ');             // Join back with spaces
-        console.log('Extracted name from URL:', name);
       }
     }
     
-    console.log(`Final extracted values - Name: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
+    // Clean up any "..." at the end of the product name and optimize long product descriptions
+    if (name) {
+      name = name
+        .replace(/\.{3,}$/, '')  // Remove ellipses at the end
+        .replace(/, for All Skin Types/, '')  // Remove "for All Skin Types"
+        .replace(/for All Skin Types/, '')    // Remove without comma
+        .replace(/, for All/, '')  // Remove "for All" with comma
+        .replace(/for All/, '')  // Remove "for All" without comma
+        .replace(/, for Men/, '')  // Remove "for Men"
+        .replace(/, for Women/, '')  // Remove "for Women"
+        .replace(/\s{2,}/g, ' ')  // Replace multiple spaces with a single space
+        .trim();
+      
+      // Extract key size, count, and packaging information
+      const sizeCountMatch = name.match(/([\d\.]+)\s*(?:oz|ounce|fl oz|fluid ounce|lb|pound|g|gram|ml|count|ct|pk|pack)/i);
+      const countMatch = name.match(/[,\s](\d+)[\s-](?:count|ct|pk|pack|bar|bars|bottle|bottles|capsule|capsules|tablet|tablets)/i);
+      
+      // For bar soaps and similar products with scent information
+      // Format like: "Coast Refreshing Deodorant Bar Soap Classic Scent, 3.2 oz, 8 Bars"
+      const soapMatch = name.match(/^(.*?)\s*(?:,\s*|\s+)((?:Classic|Original|Fresh|Spring|Clean|Mountain|Ocean|[A-Za-z]+)\s+Scent)(.*)$/i);
+      if (soapMatch) {
+        // Extract size and count if present
+        let suffix = soapMatch[3];
+        if (sizeCountMatch || countMatch) {
+          const size = sizeCountMatch ? sizeCountMatch[0] : '';
+          const count = countMatch ? countMatch[0] : '';
+          
+          // Create a clean version with just product, scent, size and count
+          name = `${soapMatch[1]} ${soapMatch[2].trim()}`;
+          
+          // Add size and count if available
+          if (size) {
+            name += `, ${size.trim()}`;
+          }
+          if (count) {
+            name += `, ${count.trim().replace(/^[,\s]+/, '')}`;
+          }
+        } else {
+          name = `${soapMatch[1]} ${soapMatch[2].trim()}${suffix}`;
+        }
+      }
+      
+      // Final cleanup
+      name = name
+        .replace(/\s+,/g, ',') // Remove spaces before commas
+        .replace(/,+/g, ',')   // Remove duplicate commas
+        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with a single space
+        .trim();
+    }
+    
+    console.log(`Extracted from AisleGopher - Product: ${name || 'Not found'}, Price: ${price || 'Not found'}`);
     
     return {
       name: name || 'Product Name Not Found',
       price: price || '0.00'
     };
+  }
+
+  // Function to fetch product information from Walmart URL using pricetracker.wtf
+  async function fetchWalmartProductInfo(url: string): Promise<{name: string, price: string}> {
+    try {
+      console.log(`Processing Walmart URL: ${url}`);
+      
+      // Extract the product ID from the Walmart URL
+      const productIdMatch = url.match(/\/ip\/([^\/]+)/);
+      if (!productIdMatch || !productIdMatch[1]) {
+        throw new Error('Could not extract product ID from Walmart URL');
+      }
+      
+      const productId = productIdMatch[1];
+      console.log(`Extracted product ID: ${productId}`);
+      
+      // Use pricetracker.wtf API to fetch product info
+      const apiUrl = `https://pricetracker.wtf/api/products/${productId}`;
+      console.log(`Fetching from pricetracker.wtf: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Origin': 'https://pricetracker.wtf',
+          'Referer': 'https://pricetracker.wtf/'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch product from API: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Received API response:', data);
+      
+      if (!data || typeof data.name !== 'string' || typeof data.price !== 'number') {
+        throw new Error('Invalid product data received from API');
+      }
+      
+      return {
+        name: data.name,
+        price: data.price.toString()
+      };
+    } catch (error) {
+      console.error('Error fetching Walmart product:', error);
+      throw error;
+    }
   }
 
   // Route to fetch product info from product URL
@@ -303,18 +360,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let productInfo;
       
-      // Check if it's an AisleGopher URL
-      if (url.includes('aislegopher.com')) {
-        productInfo = await fetchAisleGopherProductInfo(url);
+      // Check if it's a Walmart URL
+      if (url.includes('walmart.com')) {
+        productInfo = await fetchWalmartProductInfo(url);
       } else {
         return res.status(400).json({ 
           error: 'Unsupported URL',
-          message: 'Please provide a valid AisleGopher product URL (e.g., https://aislegopher.com/p/...)' 
+          message: 'Please provide a valid Walmart product URL (e.g., https://www.walmart.com/ip/...)' 
         });
       }
       
       // Check if the product information was successfully retrieved
-      if (productInfo.name === 'Product Name Not Found' || productInfo.price === '0.00') {
+      if (!productInfo.name || !productInfo.price) {
         console.log('Could not extract product information from URL');
         return res.status(422).json({
           error: 'Extraction Failed',
