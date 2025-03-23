@@ -116,43 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`Attempting to fetch AisleGopher product from URL: ${url}`);
       
-      // Extract the product ID from the URL - AisleGopher URLs are in format:
-      // https://aislegopher.com/p/product-name/productId
-      const productIdMatch = url.match(/\/p\/.*?\/(\d+)/);
-      if (!productIdMatch) {
-        console.error('Could not extract product ID from AisleGopher URL');
-        return {
-          name: 'Error Extracting Product ID',
-          price: '0.00'
-        };
-      }
-      
-      const productId = productIdMatch[1];
-      console.log(`Extracted product ID: ${productId}`);
-      
-      // Use AisleGopher's API to fetch product info
-      const apiUrl = `https://aislegopher.com/api/products/${productId}`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch product from API: ${response.status}`);
-      }
-      
-      const productData = (await response.json()) as AisleGopherProduct;
-      
-      if (!productData || typeof productData.name !== 'string' || typeof productData.price !== 'number') {
-        throw new Error('Invalid product data received from API');
-      }
-      
-      return {
-        name: productData.name,
-        price: productData.price.toString()
-      };
+      // Use the HTML parsing approach
+      return await parseAisleGopherProductPage(url);
     } catch (error) {
       console.error('Error fetching AisleGopher product:', error);
       return {
