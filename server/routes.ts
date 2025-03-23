@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertReceiptSchema, insertReceiptItemSchema } from "@shared/schema";
@@ -95,7 +95,7 @@ async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProd
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add CORS middleware
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
   
   // Get all receipts
-  app.get("/api/receipts", async (req, res) => {
+  app.get("/api/receipts", async (req: Request, res: Response) => {
     try {
       const receipts = await storage.getAllReceipts();
       res.json(receipts);
@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a receipt by ID
-  app.get("/api/receipts/:id", async (req, res) => {
+  app.get("/api/receipts/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const receipt = await storage.getReceiptById(id);
@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new receipt
-  app.post("/api/receipts", async (req, res) => {
+  app.post("/api/receipts", async (req: Request, res: Response) => {
     try {
       // Validate receipt data
       const receiptData = insertReceiptSchema.parse(req.body);
@@ -155,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create receipt items for a receipt
-  app.post("/api/receipts/:receiptId/items", async (req, res) => {
+  app.post("/api/receipts/:receiptId/items", async (req: Request, res: Response) => {
     try {
       const receiptId = parseInt(req.params.receiptId);
       
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate PDF route
-  app.post("/api/generate-pdf", (req, res) => {
+  app.post("/api/generate-pdf", (req: Request, res: Response) => {
     // In a production environment, this would use a PDF generation library
     // and return a PDF buffer or URL, but we're handling this client-side
     // with html2canvas and jsPDF for this implementation
@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fetch product info from AisleGopher
-  app.post("/api/fetch-product", async (req, res) => {
+  app.post("/api/fetch-product", async (req: Request, res: Response) => {
     try {
       const { url } = req.body;
       

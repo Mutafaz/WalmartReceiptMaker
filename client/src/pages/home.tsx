@@ -76,7 +76,7 @@ export default function Home() {
 
   const randomizeInfo = () => {
     const location = generateRandomLocation();
-    setStoreInfo(prev => ({
+    setStoreInfo((prev: StoreInfo) => ({
       ...prev,
       number: location.storeNumber,
       address: location.address,
@@ -87,7 +87,7 @@ export default function Home() {
       surveyCode: generateRandomSurveyCode()
     }));
 
-    setReceiptInfo(prev => ({
+    setReceiptInfo((prev: ReceiptInfo) => ({
       ...prev,
       date: generateRandomDateTime(),
       cashier: generateRandomManager().split(' ')[0],
@@ -96,7 +96,7 @@ export default function Home() {
       operator: generateRandomId(5)
     }));
 
-    setPaymentInfo(prev => ({
+    setPaymentInfo((prev: PaymentInfo) => ({
       ...prev,
       approvalCode: generateRandomId(6),
       referenceNumber: generateRandomId(12),
@@ -141,7 +141,7 @@ export default function Home() {
   })();
 
   // Calculate totals
-  const subtotal = items.reduce((sum, item) => {
+  const subtotal = items.reduce((sum: number, item: ReceiptItem) => {
     return sum + (parseFloat(item.price) * parseInt(item.quantity));
   }, 0);
 
