@@ -6,6 +6,75 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import fetch from "node-fetch";
 
+interface AisleGopherProduct {
+  name: string;
+  price: string;
+}
+
+// Function to parse AisleGopher product page
+async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product page: ${response.statusText}`);
+    }
+    
+    const html = await response.text();
+    
+    // Extract product name from URL
+    const nameMatch = url.match(/\/p\/([^/]+)\/\d+$/);
+    if (!nameMatch) {
+      throw new Error("Could not extract product name from URL");
+    }
+    const name = nameMatch[1]
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    // Try to find price in various formats
+    const pricePatterns = [
+      /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/,  // JSON price format
+      /data-price="([0-9]+\.[0-9]{2})"/,       // Data-price attribute
+      /current-price[^>]*>([0-9]+\.[0-9]{2})</, // Current price class
+      /product-price[^>]*>([0-9]+\.[0-9]{2})</, // Product price class
+      /item-price[^>]*>([0-9]+\.[0-9]{2})</,    // Item price class
+      /<span[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,  // Price in span
+      /<div[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price in div
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</      // Price in p
+    ];
+
+    let price = "0.00";
+    for (const pattern of pricePatterns) {
+      const match = html.match(pattern);
+      if (match) {
+        price = match[1];
+        break;
+      }
+    }
+
+    // If no price found in initial patterns, try meta tags and script tags
+    if (price === "0.00") {
+      const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([0-9]+\.[0-9]{2})"/);
+      if (metaPriceMatch) {
+        price = metaPriceMatch[1];
+      } else {
+        const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
+        if (scriptPriceMatch) {
+          price = scriptPriceMatch[1];
+        }
+      }
+    }
+
+    return {
+      name,
+      price
+    };
+  } catch (error) {
+    console.error("Error parsing AisleGopher product page:", error);
+    throw error;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes for receipts
   
@@ -94,6 +163,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ message: "Failed to create receipt items" });
+    }
+  });
+
+  // Fetch product info from AisleGopher
+  app.post("/api/fetch-product", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url || typeof url !== 'string' || !url.includes('aislegopher.com')) {
+        return res.status(400).json({ 
+          message: "Invalid URL. Please provide a valid AisleGopher product URL." 
+        });
+      }
+
+      const productInfo = await parseAisleGopherProductPage(url);
+      res.json(productInfo);
+    } catch (error) {
+      console.error("Error fetching product info:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch product information. Please try again or add the item manually." 
+      });
     }
   });
 

@@ -40,6 +40,8 @@ export default function ReceiptForm({
   const { toast } = useToast();
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [productUrl, setProductUrl] = useState('');
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   // Handle store info changes
   const handleStoreInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,6 +305,61 @@ export default function ReceiptForm({
     }
   };
 
+  // Fetch product info from AisleGopher URL
+  const fetchProductInfo = async () => {
+    if (!productUrl.trim() || !productUrl.includes('aislegopher.com')) {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid AisleGopher product URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoadingProduct(true);
+    try {
+      const response = await apiRequest(
+        'POST',
+        '/api/fetch-product',
+        { url: productUrl }
+      );
+      
+      const productData = await response.json();
+
+      if (productData && productData.name && productData.price) {
+        // Add the product as a new item
+        setItems(prev => [
+          ...prev,
+          { 
+            id: nanoid(), 
+            name: productData.name, 
+            price: productData.price, 
+            quantity: "1" 
+          }
+        ]);
+
+        // Clear the URL field
+        setProductUrl('');
+
+        toast({
+          title: "Product Added",
+          description: `Successfully added "${productData.name}" to your receipt.`,
+        });
+      } else {
+        throw new Error("Invalid product data received");
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      toast({
+        title: "Failed to Fetch Product",
+        description: "Unable to extract product information from the provided URL. Please try again or add the item manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProduct(false);
+    }
+  };
+
   return (
     <div className="lg:col-span-3 space-y-6">
       {/* Logo Customization */}
@@ -488,27 +545,125 @@ export default function ReceiptForm({
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4 border-b pb-2">
             <h2 className="text-lg font-semibold">Items</h2>
-            <Button
-              onClick={addItem}
-              variant="default"
-              className="bg-walmart-blue hover:bg-blue-600"
-            >
+            <div className="flex space-x-2">
+              <Button
+                onClick={addItem}
+                variant="default"
+                className="bg-walmart-blue hover:bg-blue-600"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-4 w-4 mr-1" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 4v16m8-8H4" 
+                  />
+                </svg>
+                Add Item
+              </Button>
+              <Button
+                onClick={() => window.open('https://aislegopher.com', '_blank')}
+                variant="outline"
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-4 w-4 mr-1" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" 
+                  />
+                </svg>
+                Open AisleGopher
+              </Button>
+            </div>
+          </div>
+
+          {/* AisleGopher Product URL Input */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <Label htmlFor="product-url" className="text-sm font-medium flex items-center mb-2">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                className="h-4 w-4 mr-1" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
+                viewBox="0 0 20 20" 
+                fill="currentColor" 
+                className="w-4 h-4 mr-1 text-blue-500"
               >
                 <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 4v16m8-8H4" 
+                  fillRule="evenodd" 
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1v-3a1 1 0 00-1-1z" 
+                  clipRule="evenodd" 
                 />
               </svg>
-              Add Item
-            </Button>
+              Add item from AisleGopher.com
+            </Label>
+            <div className="flex space-x-2">
+              <Input
+                id="product-url"
+                placeholder="Paste AisleGopher product URL (e.g., https://aislegopher.com/p/...)"
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                onClick={fetchProductInfo} 
+                disabled={isLoadingProduct || !productUrl.includes('aislegopher.com')}
+                className="bg-walmart-blue hover:bg-blue-600 text-white"
+              >
+                {isLoadingProduct ? (
+                  <svg 
+                    className="animate-spin h-4 w-4 mr-1" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                    ></circle>
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
+                    />
+                  </svg>
+                )}
+                {isLoadingProduct ? "Loading..." : "Fetch Product"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Paste a link to any AisleGopher product to automatically extract the name and price
+            </p>
           </div>
 
           {/* Target Total Feature */}
