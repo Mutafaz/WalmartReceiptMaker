@@ -34,7 +34,7 @@ export default function ReceiptForm({
   setPaymentInfo,
   items,
   setItems,
-  randomizeInfo
+  randomizeInfo,
 }: ReceiptFormProps) {
   const { toast } = useToast();
   const [downloading, setDownloading] = useState(false);
