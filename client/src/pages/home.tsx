@@ -122,6 +122,8 @@ export default function Home() {
     { id: "1", name: "Great Value Milk 1 Gallon", price: "3.48", quantity: "1" },
     { id: "2", name: "Bananas", price: "1.24", quantity: "1" },
   ]);
+  const [productUrl, setProductUrl] = useState("");
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   // Calculate formatted date for receipt display
   const formattedDate = (() => {
@@ -229,6 +231,10 @@ export default function Home() {
             items={items}
             setItems={setItems}
             randomizeInfo={randomizeInfo}
+            productUrl={productUrl}
+            setProductUrl={setProductUrl}
+            isLoadingProduct={isLoadingProduct}
+            setIsLoadingProduct={setIsLoadingProduct}
           />
 
           {/* Preview */}

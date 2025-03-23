@@ -6,6 +6,11 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import fetch from "node-fetch";
 
+interface AisleGopherProduct {
+  name: string;
+  price: string;
+}
+
 async function parseAisleGopherProductPage(url: string): Promise<AisleGopherProduct> {
   try {
     const response = await fetch(url, {
