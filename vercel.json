@@ -32,5 +32,6 @@
       "src": "/(.*)",
       "dest": "/client/index.html"
     }
-  ]
+  ],
+  "buildCommand": "npm install && npm run build"
 } 
