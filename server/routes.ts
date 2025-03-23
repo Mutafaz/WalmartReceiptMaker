@@ -176,10 +176,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Extract price - look for common price formats
     let price = null;
     const pricePatterns = [
-      /\$([0-9]+\.[0-9]{2})/,                 // Standard price format like $12.99
       /"price":\s*"?\$?([0-9]+\.[0-9]{2})"?/, // JSON price format
       /data-price="([0-9]+\.[0-9]{2})"/,      // data-price attribute
-      /price">\$([0-9]+\.[0-9]{2})</          // Price in specific element
+      /price">\$([0-9]+\.[0-9]{2})</,         // Price in specific element
+      /\$([0-9]+\.[0-9]{2})/,                 // Standard price format like $12.99
+      /current-price[^>]*>([0-9]+\.[0-9]{2})</, // Current price class
+      /product-price[^>]*>([0-9]+\.[0-9]{2})</, // Product price class
+      /item-price[^>]*>([0-9]+\.[0-9]{2})</,   // Item price class
+      /<span[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</, // Price in span with price class
+      /<div[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</,   // Price in div with price class
+      /<p[^>]*class="[^"]*price[^"]*"[^>]*>([0-9]+\.[0-9]{2})</      // Price in p with price class
     ];
     
     for (const pattern of pricePatterns) {
@@ -187,6 +193,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (match && match[1]) {
         price = match[1];
         break;
+      }
+    }
+    
+    // If no price found, try to find it in meta tags
+    if (!price) {
+      const metaPriceMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([0-9]+\.[0-9]{2})"/);
+      if (metaPriceMatch && metaPriceMatch[1]) {
+        price = metaPriceMatch[1];
+      }
+    }
+    
+    // If still no price found, try to find it in script tags
+    if (!price) {
+      const scriptPriceMatch = html.match(/price["']:\s*["']\$?([0-9]+\.[0-9]{2})["']/);
+      if (scriptPriceMatch && scriptPriceMatch[1]) {
+        price = scriptPriceMatch[1];
       }
     }
     
