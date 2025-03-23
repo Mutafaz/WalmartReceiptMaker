@@ -68,7 +68,7 @@ export class MemStorage implements IStorage {
   
   async createReceipt(insertReceipt: InsertReceipt): Promise<Receipt> {
     const id = this.receiptId++;
-    const receipt: Receipt = { ...insertReceipt, id };
+    const receipt: Receipt = { ...insertReceipt, id, userId: insertReceipt.userId ?? null };
     this.receipts.set(id, receipt);
     return receipt;
   }
