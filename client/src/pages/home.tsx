@@ -122,7 +122,7 @@ export default function Home() {
   const subtotal = items.reduce((sum, item) => {
     return sum + (parseFloat(item.price) * parseInt(item.quantity));
   }, 0);
-  
+
   const taxAmount = subtotal * (parseFloat(paymentInfo.taxRate) / 100);
   const total = subtotal + taxAmount;
 
@@ -188,8 +188,9 @@ export default function Home() {
             setPaymentInfo={setPaymentInfo}
             items={items}
             setItems={setItems}
+            randomizeInfo={randomizeInfo}
           />
-          
+
           {/* Preview */}
           <ReceiptPreview 
             storeInfo={storeInfo}

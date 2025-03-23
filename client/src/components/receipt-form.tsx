@@ -22,6 +22,7 @@ interface ReceiptFormProps {
   setPaymentInfo: React.Dispatch<React.SetStateAction<PaymentInfo>>;
   items: ReceiptItem[];
   setItems: React.Dispatch<React.SetStateAction<ReceiptItem[]>>;
+  randomizeInfo: () => void;
 }
 
 export default function ReceiptForm({
@@ -32,7 +33,8 @@ export default function ReceiptForm({
   paymentInfo,
   setPaymentInfo,
   items,
-  setItems
+  setItems,
+  randomizeInfo
 }: ReceiptFormProps) {
   const { toast } = useToast();
   const [downloading, setDownloading] = useState(false);
@@ -252,7 +254,7 @@ export default function ReceiptForm({
       );
 
       pdf.save('walmart-receipt.pdf');
-      
+
       toast({
         title: "Download Complete",
         description: "Your receipt has been downloaded as a PDF.",
@@ -271,12 +273,12 @@ export default function ReceiptForm({
 
   // File upload reference for logo
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Handle logo file upload
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
@@ -288,20 +290,20 @@ export default function ReceiptForm({
     };
     reader.readAsDataURL(file);
   };
-  
+
   // Toggle custom logo usage
   const toggleCustomLogo = (checked: boolean) => {
     setStoreInfo(prev => ({
       ...prev,
       useCustomLogo: checked
     }));
-    
+
     // If toggling on and no logo is selected, open file picker
     if (checked && !storeInfo.customLogo && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
-  
+
   // Fetch product info from Walmart URL
   const fetchWalmartProduct = async () => {
     if (!walmartUrl.trim() || !walmartUrl.includes('walmart.com')) {
@@ -312,7 +314,7 @@ export default function ReceiptForm({
       });
       return;
     }
-    
+
     setIsLoadingProduct(true);
     try {
       const response = await apiRequest({
@@ -320,7 +322,7 @@ export default function ReceiptForm({
         method: 'POST',
         data: { url: walmartUrl }
       });
-      
+
       if (response.name && response.price) {
         // Add the product as a new item
         setItems(prev => [
@@ -332,10 +334,10 @@ export default function ReceiptForm({
             quantity: "1" 
           }
         ]);
-        
+
         // Clear the URL field
         setWalmartUrl('');
-        
+
         toast({
           title: "Product Added",
           description: `Successfully added "${response.name}" to your receipt.`,
@@ -354,7 +356,29 @@ export default function ReceiptForm({
       setIsLoadingProduct(false);
     }
   };
-  
+
+  const randomizeInfo = () => {
+    const randomString = (length: number) => {
+      let result = '';
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      const charactersLength = characters.length;
+      for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+      return result;
+    };
+
+    setPaymentInfo(prev => ({
+      ...prev,
+      approvalCode: randomString(6),
+      referenceNumber: randomString(10),
+      networkId: randomString(4),
+      aid: `A${randomString(12)}`,
+      arc: `R${randomString(12)}`
+    }));
+  };
+
+
   return (
     <div className="lg:col-span-3 space-y-6">
       {/* Logo Customization */}
@@ -375,7 +399,7 @@ export default function ReceiptForm({
                 onCheckedChange={toggleCustomLogo}
               />
             </div>
-            
+
             {storeInfo.useCustomLogo && (
               <div className="space-y-2">
                 <input
@@ -393,7 +417,7 @@ export default function ReceiptForm({
                   >
                     {storeInfo.customLogo ? 'Change Image' : 'Upload Image'}
                   </Button>
-                  
+
                   {storeInfo.customLogo && (
                     <Button 
                       variant="outline" 
@@ -404,7 +428,7 @@ export default function ReceiptForm({
                     </Button>
                   )}
                 </div>
-                
+
                 {storeInfo.customLogo && (
                   <div className="mt-2 border rounded-md p-2 text-center">
                     <p className="text-sm text-muted-foreground mb-2">Preview:</p>
@@ -420,7 +444,7 @@ export default function ReceiptForm({
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Store Information */}
       <Card>
         <CardContent className="pt-6">
@@ -526,7 +550,7 @@ export default function ReceiptForm({
             <Button 
               type="button"
               className="w-full mt-4"
-              onClick={() => randomizeInfo()}
+              onClick={randomizeInfo}
               variant="outline"
             >
               Randomize Information
@@ -562,7 +586,7 @@ export default function ReceiptForm({
               Add Item
             </Button>
           </div>
-          
+
           {/* Walmart Product URL Input */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <Label htmlFor="walmart-url" className="text-sm font-medium flex items-center mb-2">
@@ -733,7 +757,7 @@ export default function ReceiptForm({
               </Select>
             </div>
           </div>
-          
+
           {paymentInfo.method !== "CASH" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -802,7 +826,7 @@ export default function ReceiptForm({
               </div>
             </div>
           )}
-          
+
           <Separator className="my-4" />
           <div className="flex justify-between pt-2">
             <Button
