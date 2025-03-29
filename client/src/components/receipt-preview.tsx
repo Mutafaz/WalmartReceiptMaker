@@ -1,5 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { StoreInfo, ReceiptInfo, PaymentInfo, ReceiptItem } from "@/pages/home";
+import { Button } from "@/components/ui/button";
+import html2canvas from "html2canvas";
+import { toast } from "sonner";
 
 interface ReceiptPreviewProps {
   storeInfo: StoreInfo;
@@ -33,11 +36,57 @@ export default function ReceiptPreview({
     return numbers.join(' ');
   })();
 
+  const downloadAsPNG = async () => {
+    const receiptElement = document.getElementById('receipt-preview');
+    if (!receiptElement) return;
+
+    try {
+      const canvas = await html2canvas(receiptElement, {
+        scale: 2, // Higher quality
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      // Convert to PNG and download
+      const link = document.createElement("a");
+      link.download = "receipt.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast.success("Receipt downloaded as PNG");
+    } catch (error) {
+      console.error("Failed to generate PNG:", error);
+      toast.error("Failed to generate receipt image");
+    }
+  };
+
   return (
     <div className="lg:col-span-2 sticky top-6">
       <Card>
         <CardContent className="pt-6">
-          <h2 className="text-lg font-semibold mb-2 text-center">Receipt Preview</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-center">Receipt Preview</h2>
+            <Button
+              onClick={downloadAsPNG}
+              variant="secondary"
+              className="bg-walmart-blue hover:bg-blue-600 text-white"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-4 w-4 mr-1" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
+                />
+              </svg>
+              Download PNG
+            </Button>
+          </div>
           
           <div 
             id="receipt-preview" 
