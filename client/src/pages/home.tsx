@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ReceiptForm from "@/components/receipt-form";
 import ReceiptPreview from "@/components/receipt-preview";
 import HelpModal from "@/components/help-modal";
@@ -90,6 +90,8 @@ export default function Home() {
     { id: "1", name: "Great Value Milk 1 Gallon", price: "3.48", quantity: "1" },
     { id: "2", name: "Bananas", price: "1.24", quantity: "1" },
   ]);
+
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   // Calculate formatted date for receipt display
   const formattedDate = (() => {
@@ -220,6 +222,7 @@ export default function Home() {
             subtotal={subtotal}
             taxAmount={taxAmount}
             total={total}
+            receiptRef={receiptRef}
           />
         </div>
       </main>

@@ -10,6 +10,7 @@ interface ReceiptPreviewProps {
   subtotal: number;
   taxAmount: number;
   total: number;
+  receiptRef?: React.RefObject<HTMLDivElement>;
 }
 
 export default function ReceiptPreview({
@@ -20,7 +21,8 @@ export default function ReceiptPreview({
   formattedDate,
   subtotal,
   taxAmount,
-  total
+  total,
+  receiptRef
 }: ReceiptPreviewProps) {
   // Generate random transaction number
   const transactionNumber = (() => {
@@ -39,6 +41,7 @@ export default function ReceiptPreview({
           
           <div 
             id="receipt-preview" 
+            ref={receiptRef}
             className="bg-white p-6 rounded-lg shadow-lg max-w-sm mx-auto"
             style={{
               fontFamily: 'Consolas, Monaco, "Courier New", monospace',
