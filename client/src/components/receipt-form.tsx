@@ -158,7 +158,7 @@ export default function ReceiptForm({
           <title>Walmart Receipt</title>
           <style>
             body {
-              font-family: "Courier New", monospace;
+              font-family: Consolas, Monaco, "Courier New", monospace;
               width: 300px;
               margin: 0 auto;
               padding: 20px;

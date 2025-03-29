@@ -37,7 +37,18 @@ export default function ReceiptPreview({
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold mb-2 text-center">Receipt Preview</h2>
           
-          <div id="receipt-preview" className="receipt-paper p-4 mx-auto max-w-md border border-gray-200 font-receipt text-[11px] leading-tight text-black font-extrabold" style={{fontWeight: 900, textShadow: '0 0 0.5px black'}}>
+          <div 
+            id="receipt-preview" 
+            className="bg-white p-6 rounded-lg shadow-lg max-w-sm mx-auto"
+            style={{
+              fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+              fontSize: '12px',
+              lineHeight: '1.2',
+              width: '300px',
+              margin: '0 auto',
+              padding: '20px',
+            }}
+          >
             {/* Store Logo and Info */}
             <div className="text-center mb-3">
               {storeInfo.useCustomLogo && storeInfo.customLogo ? (
