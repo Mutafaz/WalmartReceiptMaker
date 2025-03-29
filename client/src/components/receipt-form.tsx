@@ -225,7 +225,7 @@ export default function ReceiptForm({
       }
 
       const canvas = await html2canvas(receiptElement, {
-        scale: 2,
+        scale: 4,
         backgroundColor: null,
       });
 

@@ -42,7 +42,7 @@ export default function ReceiptPreview({
 
     try {
       const canvas = await html2canvas(receiptElement, {
-        scale: 2, // Higher quality
+        scale: 4, // Increased from 2 to 4 for higher DPI
         backgroundColor: "#ffffff",
         logging: false,
       });
